@@ -66,7 +66,7 @@ def create_conversation_token(tokenizer, prompt: str):
     convo = [
         {
             "role": "system",
-            "content": "You are a helpful image captioner. The images you caption must be very precise to be used by an diffusion model to learn intricate details of various images.",
+            "content": "You are a image captioner. You captions must be precise and are used by an diffusion model to learn intricate details of various training images.",
         },
         {
             "role": "user",
@@ -78,7 +78,6 @@ def create_conversation_token(tokenizer, prompt: str):
     convo_string = tokenizer.apply_chat_template(convo, tokenize=False, add_generation_prompt=True)
     convo_tokens = tokenizer.encode(convo_string, return_tensors="pt", add_special_tokens=False, truncation=False)
     convo_tokens = convo_tokens.squeeze(0)  # Squeeze just to make the following easier
-
     return convo_tokens
 
 
@@ -125,9 +124,12 @@ def generate_caption(text_model, clip_model, image_adapter, tokenizer, pixel_val
 
     # generate_ids = text_model.generate(input_ids, inputs_embeds=inputs_embeds, attention_mask=attention_mask, max_new_tokens=300, do_sample=False, suppress_tokens=None)
     # generate_ids = text_model.generate(input_ids, inputs_embeds=inputs_embeds, attention_mask=attention_mask, max_new_tokens=300, do_sample=True, top_k=10, temperature=0.5, suppress_tokens=None)
-    generate_ids = text_model.generate(input_ids, inputs_embeds=input_embeds, attention_mask=attention_mask,
-                                       max_new_tokens=300, do_sample=True,
-                                       suppress_tokens=None)  # Uses the default which is temp=0.6, top_p=0.9
+    generate_ids = text_model.generate(
+        input_ids,
+        inputs_embeds=input_embeds,
+        attention_mask=attention_mask,
+        max_new_tokens=300, do_sample=True,
+        suppress_tokens=None)  # Uses the default which is temp=0.6, top_p=0.9
 
     # Trim off the prompt
     generate_ids = generate_ids[:, input_ids.shape[1]:]
