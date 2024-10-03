@@ -53,12 +53,14 @@ def create_prompt_for_vlm(
     return prompt_str
 
 
-def process_input_image(input_image: PIL.Image.Image):
-    image = input_image.resize((384, 384), PIL.Image.LANCZOS) if input_image.width != 384 or input_image.height != 384 else input_image
-    pixel_values = TVF.pil_to_tensor(image).unsqueeze(0) / 255.0
-    pixel_values = TVF.normalize(pixel_values, [0.5], [0.5])
-    pixel_values = pixel_values.to('cuda')
-    return pixel_values
+def process_images(images: List[PIL.Image.Image]) -> List[torch.Tensor]:
+    def process_image(source_image: PIL.Image.Image) -> torch.Tensor:
+        target_image = source_image.resize(
+            (384, 384), PIL.Image.LANCZOS) if source_image.width != 384 or source_image.height != 384 else source_image
+        return TVF.normalize(TVF.pil_to_tensor(target_image).unsqueeze(
+            0) / 255.0, [0.5], [0.5]).to('cuda')
+
+    return [process_image(image) for image in images]
 
 
 def create_conversation_token(tokenizer, prompt: str):
@@ -95,69 +97,71 @@ def calculate_preamble_length(tokenizer, convo_tokens, prompt_tokens):
     return eot_id_indices[1] - prompt_tokens.shape[0]  # Number of tokens before the prompt
 
 
-def generate_caption(text_model, clip_model, image_adapter, tokenizer, pixel_values, convo_tokens, preamble_len):
+def generate_caption(
+        text_model, clip_model, image_adapter, tokenizer, image: List[PIL.Image.Image], convo_tokens, preamble_len):
     convo_embeds = text_model.model.embed_tokens(convo_tokens.unsqueeze(0).to('cuda'))
 
-    # This results in Batch x Image Tokens x Features
-    with torch.amp.autocast_mode.autocast('cuda', enabled=True):
-        vision_outputs = clip_model(pixel_values=pixel_values, output_hidden_states=True)
-        embedded_images = image_adapter(vision_outputs.hidden_states)
-        embedded_images = embedded_images.to('cuda')
+    captions: List[str] = []
 
-    # Construct the input
-    input_embeds = torch.cat([
-        convo_embeds[:, :preamble_len],  # Part before the prompt
-        embedded_images.to(dtype=convo_embeds.dtype),  # Image
-        convo_embeds[:, preamble_len:],  # The prompt and anything after it
-    ], dim=1).to('cuda')
+    pixel_values = process_images(image)
 
-    input_ids = torch.cat([
-        convo_tokens[:preamble_len].unsqueeze(0),
-        torch.zeros((1, embedded_images.shape[1]), dtype=torch.long),
-        # Dummy tokens for the image (TODO: Should probably use a special token here so as not to confuse any generation algorithms that might be inspecting the input)
-        convo_tokens[preamble_len:].unsqueeze(0),
-    ], dim=1).to('cuda')
-    attention_mask = torch.ones_like(input_ids)
+    for pixel_value in pixel_values:
+        # This results in Batch x Image Tokens x Features
+        with torch.amp.autocast_mode.autocast('cuda', enabled=True):
+            vision_outputs = clip_model(pixel_values=pixel_value, output_hidden_states=True)
+            embedded_images = image_adapter(vision_outputs.hidden_states)
+            embedded_images = embedded_images.to('cuda')
 
-    # Debugging
-    print(f"Input to model: {repr(tokenizer.decode(input_ids[0]))}")
+        # Construct the input
+        input_embeds = torch.cat([
+            convo_embeds[:, :preamble_len],  # Part before the prompt
+            embedded_images.to(dtype=convo_embeds.dtype),  # Image
+            convo_embeds[:, preamble_len:],  # The prompt and anything after it
+        ], dim=1).to('cuda')
 
-    # generate_ids = text_model.generate(input_ids, inputs_embeds=inputs_embeds, attention_mask=attention_mask, max_new_tokens=300, do_sample=False, suppress_tokens=None)
-    # generate_ids = text_model.generate(input_ids, inputs_embeds=inputs_embeds, attention_mask=attention_mask, max_new_tokens=300, do_sample=True, top_k=10, temperature=0.5, suppress_tokens=None)
-    generate_ids = text_model.generate(
-        input_ids,
-        inputs_embeds=input_embeds,
-        attention_mask=attention_mask,
-        max_new_tokens=300, do_sample=True,
-        suppress_tokens=None)  # Uses the default which is temp=0.6, top_p=0.9
+        input_ids = torch.cat([
+            convo_tokens[:preamble_len].unsqueeze(0),
+            torch.zeros((1, embedded_images.shape[1]), dtype=torch.long),
+            # Dummy tokens for the image (TODO: Should probably use a special token here so as not to confuse any generation algorithms that might be inspecting the input)
+            convo_tokens[preamble_len:].unsqueeze(0),
+        ], dim=1).to('cuda')
+        attention_mask = torch.ones_like(input_ids)
 
-    # Trim off the prompt
-    generate_ids = generate_ids[:, input_ids.shape[1]:]
-    if generate_ids[0][-1] == tokenizer.eos_token_id or generate_ids[0][-1] == tokenizer.convert_tokens_to_ids(
-            "<|eot_id|>"):
-        generate_ids = generate_ids[:, :-1]
+        # Debugging
+        print(f"Input to model: {repr(tokenizer.decode(input_ids[0]))}")
 
-    return tokenizer.batch_decode(generate_ids, skip_special_tokens=False, clean_up_tokenization_spaces=False)[0]
+        generate_ids = text_model.generate(
+            input_ids,
+            inputs_embeds=input_embeds,
+            attention_mask=attention_mask,
+            max_new_tokens=300, do_sample=True,
+            suppress_tokens=None)  # Uses the default which is temp=0.6, top_p=0.9
+
+        # Trim off the prompt
+        generate_ids = generate_ids[:, input_ids.shape[1]:]
+        if generate_ids[0][-1] == tokenizer.eos_token_id or generate_ids[0][-1] == tokenizer.convert_tokens_to_ids(
+                "<|eot_id|>"):
+            generate_ids = generate_ids[:, :-1]
+
+        captions.append(
+            tokenizer.batch_decode(generate_ids, skip_special_tokens=False, clean_up_tokenization_spaces=False)[0])
+
+    return captions
 
 
 def caption_image(
         tokenizer, text_model, clip_model, image_adapter,
-        image: PIL.Image.Image, caption_type: str, caption_length: str | int, extra_options: list[str],
+        images: List[PIL.Image.Image], caption_type: str, caption_length: str | int, extra_options: list[str],
         name_input: str, custom_prompt: str, captions: Dict[str, List[str]]):
     prompt_str = create_prompt_for_vlm(caption_type, caption_length, extra_options, name_input, custom_prompt,
                                        captions)
-
-    # Process Image
-    pixel_values = process_input_image(image)
-
     # prompt_str is tokenized separately so we can do the calculations below
     convo_tokens = create_conversation_token(tokenizer, prompt_str)
     prompt_tokens = create_prompt_tokens(tokenizer, prompt_str)
     preamble_len = calculate_preamble_length(tokenizer, convo_tokens, prompt_tokens)
+    captions = generate_caption(text_model, clip_model, image_adapter, tokenizer, images, convo_tokens, preamble_len)
 
-    caption = generate_caption(text_model, clip_model, image_adapter, tokenizer,
-                               pixel_values, convo_tokens, preamble_len)
-    return prompt_str, caption
+    return prompt_str, captions[0]
 
 
 def caption_images(
@@ -168,7 +172,7 @@ def caption_images(
     for image in images:
         prompt_str, caption = caption_image(
             tokenizer, text_model, clip_model, image_adapter,
-            image, caption_type, caption_length, extra_options, name_input,
+            images, caption_type, caption_length, extra_options, name_input,
             custom_prompt, captions)
         predicted_captions[image] = {"prompt": prompt_str, "caption": caption}
     return predicted_captions

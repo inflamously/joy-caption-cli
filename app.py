@@ -70,7 +70,7 @@ image_adapter = load_image_adapter(CHECKPOINT_PATH, clip_model, text_model)
 def stream_chat(input_image: Image.Image, caption_type: str, caption_length: str | int, extra_options: list[str],
                 name_input: str, custom_prompt: str) -> tuple[str, str]:
     return caption_image(
-        tokenizer, text_model, clip_model, image_adapter, input_image, caption_type, caption_length, extra_options,
+        tokenizer, text_model, clip_model, image_adapter, [input_image], caption_type, caption_length, extra_options,
         name_input, custom_prompt, CAPTION_TYPE_MAP)
 
 

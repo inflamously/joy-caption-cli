@@ -43,7 +43,7 @@ def _process_caption_file(
     img = PIL.Image.open(file).convert('RGB').resize((384, 384), PIL.Image.LANCZOS)
 
     prompt, caption = caption_image(
-        tokenizer, text_model, clip_model, image_adapter, img, caption_type, caption_length,
+        tokenizer, text_model, clip_model, image_adapter, [img], caption_type, caption_length,
         extra_options if extra_options else [], name, custom_prompt, captions_map)
 
     if not output:
