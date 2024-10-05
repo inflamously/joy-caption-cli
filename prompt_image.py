@@ -116,64 +116,41 @@ def generate_caption(
             embedded_images = image_adapter(vision_outputs.hidden_states)
             embedded_images = embedded_images.to('cuda')
 
-        # images_to_embed =  embedded_images.to(dtype=convo_embeds.dtype) if len(images) == 1 else embedded_images.reshape(batch_size, 1, embedded_images.shape[1], embedded_images.shape[2])
+        embeds = []
+        tokens = []
 
-        # Construct the input
-        input_embeds = None
-        # if embedded_images.shape[0] == 1:
-        #     input_embeds = torch.cat([
-        #         convo_embeds[:, :preamble_len],  # Part before the prompt
-        #         embedded_images.to(dtype=convo_embeds.dtype),  # Image
-        #     ], dim=1).to('cuda')
-        # else:
-        #     input_embeds = convo_embeds[:, :preamble_len].to(dtype=convo_embeds.dtype),  # Part before the prompt
-        #     for dim_idx in range(0, embedded_images.shape[0]):
-        #         input_embeds = torch.cat([
-        #             torch.Tensor(*input_embeds) if isinstance(input_embeds, tuple) else input_embeds,
-        #             embedded_images[dim_idx:dim_idx + 1, :, :].to(dtype=convo_embeds.dtype),
-        #         ], dim=1).to('cuda')
+        for n in range(0, embedded_images.shape[0]):
+            embeds.append(torch.cat([
+                convo_embeds[:, :preamble_len].to(dtype=convo_embeds.dtype),
+                embedded_images[n:n+1, :, :].to(dtype=convo_embeds.dtype).to('cuda'),
+                convo_embeds[:, preamble_len:],  # The prompt and anything after it
+            ], dim=1).to('cuda'))
 
-        separator_token = torch.Tensor(tokenizer.encode(' ### '))[1:]
-        multi_embedded_images = []
-        if embedded_images.shape[0] > 1:
-            for n in range(0, embedded_images.shape[0]):
-                multi_embedded_images.append(embedded_images[n:n+1, :, :].to(dtype=convo_embeds.dtype).to('cuda'))
-                multi_embedded_images.append(torch.zeros(separator_token.shape[0], embedded_images.shape[2]).reshape(1, -1, embedded_images.shape[2]).to(dtype=convo_embeds.dtype).to('cuda'))
-        else:
-            multi_embedded_images.append(embedded_images.to(dtype=convo_embeds.dtype))
+            tokens.append(torch.cat([
+                convo_tokens[:preamble_len].unsqueeze(0),
+                torch.zeros((1, embedded_images.shape[1]), dtype=torch.long),
+                # Dummy tokens for the image (TODO: Should probably use a special token here so as not to confuse any generation algorithms that might be inspecting the input)
+                convo_tokens[preamble_len:].unsqueeze(0),
+            ], dim=1).to('cuda'))
 
-        input_embeds = torch.cat([
-            convo_embeds[:, :preamble_len].to(dtype=convo_embeds.dtype),
-            *multi_embedded_images,
-            convo_embeds[:, preamble_len:],  # The prompt and anything after it
-        ], dim=1).to('cuda')
-
-        image_token_embed = []
-        for n in range(embedded_images.shape[0]):
-            image_token_embed.append(torch.zeros((1, embedded_images.shape[1]), dtype=torch.long))
-            image_token_embed.append(separator_token.reshape(1, -1).to(dtype=torch.long))
-
-        input_ids = torch.cat([
-            convo_tokens[:preamble_len].unsqueeze(0),
-            *image_token_embed,
-            # Dummy tokens for the image (TODO: Should probably use a special token here so as not to confuse any generation algorithms that might be inspecting the input)
-            convo_tokens[preamble_len:].unsqueeze(0),
-        ], dim=1).to('cuda')
-        attention_mask = torch.ones_like(input_ids)
+        # We take first because, embeds and tokens all shouuld be equal dimensions
+        attention_mask = torch.ones_like(tokens[0])
 
         # Debugging
-        print(f"Input to model: {repr(tokenizer.decode(input_ids[0]))}")
+        for token in tokens:
+            print(f"Input to model: {repr(tokenizer.decode(token[0]))}")
 
         generate_ids = text_model.generate(
-            torch.stack([input_ids, input_ids]).squeeze(),
-            inputs_embeds=torch.stack([input_embeds, input_embeds]).squeeze(),
+            torch.stack(tokens).squeeze(),
+            inputs_embeds=torch.stack(embeds).squeeze(),
             attention_mask=attention_mask,
             max_new_tokens=300,
             do_sample=True,
             suppress_tokens=None)  # Uses the default which is temp=0.6, top_p=0.9
 
-        results = tokenizer.batch_decode(generate_ids, skip_special_tokens=False, clean_up_tokenization_spaces=False)
-        print(results)
+        batch_captions = tokenizer.batch_decode(generate_ids, skip_special_tokens=False, clean_up_tokenization_spaces=False)
+        captions = captions + batch_captions
+
         # Trim off the prompt
         # generate_ids = generate_ids[:, input_ids.shape[1]:]
         # if generate_ids[0][-1] == tokenizer.eos_token_id or generate_ids[0][-1] == tokenizer.convert_tokens_to_ids(
