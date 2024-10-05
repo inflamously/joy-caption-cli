@@ -150,7 +150,7 @@ def generate_caption(
             suppress_tokens=None)  # Uses the default which is temp=0.6, top_p=0.9
 
         # Skip prompting text using [:, tokens[0].shape[1]]
-        trim_generate_ids = torch.stack([generate_ids[n:n + 1, tokens[n].shape[1]:] for n in range(0, len(generate_ids))]).squeeze()
+        trim_generate_ids = torch.stack([generate_ids[n:n + 1, tokens[n].shape[1]:] for n in range(0, len(generate_ids))]).squeeze(1)
         batch_captions: List[str] = tokenizer.batch_decode(trim_generate_ids, skip_special_tokens=True, clean_up_tokenization_spaces=False)
         captions = captions + batch_captions
     return captions
