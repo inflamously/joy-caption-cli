@@ -3,6 +3,7 @@ from typing import List, Dict
 import torch
 import torchvision.transforms.functional as TVF
 import PIL
+from click.core import batch
 from transformers import PreTrainedTokenizerFast
 
 
@@ -98,14 +99,14 @@ def calculate_preamble_length(tokenizer, convo_tokens, prompt_tokens):
     return eot_id_indices[1] - prompt_tokens.shape[0]  # Number of tokens before the prompt
 
 
-def generate_caption(
-        text_model, clip_model, image_adapter, tokenizer: PreTrainedTokenizerFast, images: List[PIL.Image.Image], convo_tokens, preamble_len):
+def generate_captions(
+    text_model, clip_model, image_adapter, tokenizer: PreTrainedTokenizerFast,
+        images: List[PIL.Image.Image], convo_tokens, preamble_len, batch_size: int = 1):
     convo_embeds = text_model.model.embed_tokens(convo_tokens.unsqueeze(0).to('cuda'))
 
     if len(images) <= 0: return
 
-    batch_size = 3
-    captions: List[str] = []
+    resulting_captions: List[str] = []
 
     pixel_values = torch.stack(process_images(images)).squeeze() if len(images) > 1 else process_images(images)
     pixel_values = torch.split(pixel_values, batch_size) if len(images) > 1 else pixel_values
@@ -138,8 +139,8 @@ def generate_caption(
         attention_mask = torch.ones_like(tokens[0])
 
         # Debugging
-        for token in tokens:
-            print(f"Input to model: {repr(tokenizer.decode(token[0]))}")
+        # for token in tokens:
+        #     print(f"Input to model: {repr(tokenizer.decode(token[0]))}")
 
         generate_ids = text_model.generate(
             torch.stack(tokens).squeeze() if len(tokens) > 1 else torch.stack(tokens).squeeze(0),
@@ -152,8 +153,8 @@ def generate_caption(
         # Skip prompting text using [:, tokens[0].shape[1]]
         trim_generate_ids = torch.stack([generate_ids[n:n + 1, tokens[n].shape[1]:] for n in range(0, len(generate_ids))]).squeeze(1)
         batch_captions: List[str] = tokenizer.batch_decode(trim_generate_ids, skip_special_tokens=True, clean_up_tokenization_spaces=False)
-        captions = captions + batch_captions
-    return captions
+        resulting_captions = resulting_captions + batch_captions
+    return resulting_captions
 
 
 def caption_image(
@@ -166,29 +167,29 @@ def caption_image(
     convo_tokens = create_conversation_token(tokenizer, prompt_str)
     prompt_tokens = create_prompt_tokens(tokenizer, prompt_str)
     preamble_len = calculate_preamble_length(tokenizer, convo_tokens, prompt_tokens)
-    captions = generate_caption(text_model, clip_model, image_adapter, tokenizer, [image], convo_tokens, preamble_len)
+    captions = generate_captions(text_model, clip_model, image_adapter, tokenizer, [image], convo_tokens, preamble_len)
 
     return prompt_str, captions[0]
 
 
 def caption_images(
         tokenizer, text_model, clip_model, image_adapter,
-        images: List[PIL.Image.Image], caption_type: str, caption_length: str | int, extra_options: list[str],
-        name_input: str, custom_prompt: str, captions: Dict[str, List[str]]):
-    predicted_captions: Dict[PIL.Image.Image, {"prompt": str, "caption": str}] = {}
+        images: List[PIL.Image.Image],
+        caption_type: str, caption_length: str | int, extra_options: list[str],
+        name_input: str, custom_prompt: str, captions: Dict[str, List[str]],
+        batch_size: int = 1):
 
-    prompt_str = create_prompt_for_vlm(caption_type, caption_length, extra_options, name_input, custom_prompt,
-                                       captions)
+    prompt_str = create_prompt_for_vlm(
+        caption_type, caption_length, extra_options, name_input, custom_prompt, captions)
     convo_tokens = create_conversation_token(tokenizer, prompt_str)
     prompt_tokens = create_prompt_tokens(tokenizer, prompt_str)
     preamble_len = calculate_preamble_length(tokenizer, convo_tokens, prompt_tokens)
 
-    captions = generate_caption(text_model, clip_model, image_adapter, tokenizer, images, convo_tokens,
-                                preamble_len)
+    captions = generate_captions(
+        text_model, clip_model, image_adapter, tokenizer, images, convo_tokens, preamble_len, batch_size)
 
-    # prompt_str, caption = caption_image(
-    #     tokenizer, text_model, clip_model, image_adapter,
-    #     images, caption_type, caption_length, extra_options, name_input,
-    #     custom_prompt, captions)
-    # predicted_captions[image] = {"prompt": prompt_str, "caption": caption}
-    return predicted_captions
+    return [{
+            "image": images[img_idx],
+            "prompt": prompt_str,
+            "caption": captions[img_idx]
+        } for img_idx in range(len(images))]

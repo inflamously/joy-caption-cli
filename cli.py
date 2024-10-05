@@ -31,11 +31,11 @@ def caption():
 def _process_caption_files(
         files: List[str], output: str,
         caption_type: str = "Descriptive", caption_length: str = "long",
-        name: str = "", extra_options=None, custom_prompt: str = ""):
+        name: str = "", extra_options=None, custom_prompt: str = "", batch_size: int = 1):
     if extra_options is None:
         extra_options = []
 
-    if any(map(lambda x: not os.path.exists(x), files)):
+    if any(map(lambda f: not os.path.exists(f), files)):
         raise FileNotFoundError
 
     if not captions_map:
@@ -43,45 +43,28 @@ def _process_caption_files(
 
     images = [PIL.Image.open(file).convert('RGB').resize((384, 384), PIL.Image.LANCZOS) for file in files]
     options = extra_options if extra_options else []
-    prompt, caption = caption_images(
+    image_caption_list = caption_images(
         tokenizer, text_model, clip_model, image_adapter,
-        images, caption_type, caption_length, options, name, custom_prompt, captions_map)
+        images, caption_type, caption_length, options, name, custom_prompt, captions_map, batch_size)
 
     if not output:
-        print("Prompt used:", prompt)
-        print("Caption retrieved:", caption)
+        for image_caption in image_caption_list:
+            print(json.dumps({
+                "prompt": image_caption["prompt"],
+                "caption": image_caption["caption"]
+            }))
     else:
         if output == 'text':
-            pass
-            # with open(file[:-4] + '.txt', 'w') as f:
-            #     f.write(caption)
+            for file_idx in range(len(files)):
+                caption = image_caption_list[file_idx]["caption"]
+                with open(files[file_idx][:-4] + '.txt', 'w') as f:
+                    f.write(caption)
 
 
 def _process_caption_file(
         file: str, output: str, caption_type: str = "Descriptive", caption_length: str = "long",
         name: str = "", extra_options=None, custom_prompt: str = ""):
-    if extra_options is None:
-        extra_options = []
-
-    if not os.path.exists(file):
-        raise FileNotFoundError
-
-    if not captions_map:
-        raise Exception("config.json -> captions.map cannot be undefined!")
-
-    img = PIL.Image.open(file).convert('RGB').resize((384, 384), PIL.Image.LANCZOS)
-
-    prompt, caption = caption_image(
-        tokenizer, text_model, clip_model, image_adapter, img, caption_type, caption_length,
-        extra_options if extra_options else [], name, custom_prompt, captions_map)
-
-    if not output:
-        print("Prompt used:", prompt)
-        print("Caption retrieved:", caption)
-    else:
-        if output == 'text':
-            with open(file[:-4] + '.txt', 'w') as f:
-                f.write(caption)
+    _process_caption_files([file], output, caption_type, caption_length, name, extra_options, custom_prompt)
 
 
 @click.command('file')
