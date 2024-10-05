@@ -9,7 +9,7 @@ from pydantic.v1 import PathNotExistsError
 from tqdm import tqdm
 
 from model import load_clip_model, load_vision_model, load_tokenizer, load_llm, load_image_adapter
-from prompt_image import caption_image
+from prompt_image import caption_image, caption_images
 
 # Global State
 clip_model = None
@@ -28,12 +28,41 @@ def cli():
 def caption():
     pass
 
+def _process_caption_files(
+        files: List[str], output: str,
+        caption_type: str = "Descriptive", caption_length: str = "long",
+        name: str = "", extra_options=None, custom_prompt: str = ""):
+    if extra_options is None:
+        extra_options = []
+
+    if any(map(lambda x: not os.path.exists(x), files)):
+        raise FileNotFoundError
+
+    if not captions_map:
+        raise Exception("config.json -> captions.map cannot be undefined!")
+
+    images = [PIL.Image.open(file).convert('RGB').resize((384, 384), PIL.Image.LANCZOS) for file in files]
+    options = extra_options if extra_options else []
+    prompt, caption = caption_images(
+        tokenizer, text_model, clip_model, image_adapter,
+        images, caption_type, caption_length, options, name, custom_prompt, captions_map)
+
+    if not output:
+        print("Prompt used:", prompt)
+        print("Caption retrieved:", caption)
+    else:
+        if output == 'text':
+            pass
+            # with open(file[:-4] + '.txt', 'w') as f:
+            #     f.write(caption)
+
 
 def _process_caption_file(
         file: str, output: str, caption_type: str = "Descriptive", caption_length: str = "long",
         name: str = "", extra_options=None, custom_prompt: str = ""):
     if extra_options is None:
         extra_options = []
+
     if not os.path.exists(file):
         raise FileNotFoundError
 
@@ -43,7 +72,7 @@ def _process_caption_file(
     img = PIL.Image.open(file).convert('RGB').resize((384, 384), PIL.Image.LANCZOS)
 
     prompt, caption = caption_image(
-        tokenizer, text_model, clip_model, image_adapter, [img], caption_type, caption_length,
+        tokenizer, text_model, clip_model, image_adapter, img, caption_type, caption_length,
         extra_options if extra_options else [], name, custom_prompt, captions_map)
 
     if not output:
@@ -85,10 +114,7 @@ def _process_caption_folder(
                     images.append(os.path.join(root, file))
 
     # Process Images
-    idx = 1
-    for img in tqdm(images, desc="captioning images"):
-        _process_caption_file(img, output, caption_type, caption_length, name, extra_options, custom_prompt)
-        idx += 1
+    _process_caption_files(images, output, caption_type, caption_length, name, extra_options, custom_prompt)
 
 
 @click.command('folder')
