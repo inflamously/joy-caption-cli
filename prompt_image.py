@@ -3,6 +3,8 @@ from typing import List, Dict
 import torch
 import torchvision.transforms.functional as TVF
 import PIL
+from numpy import dtype
+from torch.linalg import multi_dot
 
 
 def select_prompt_type(caption_type: str, length: str | int, captions: Dict[str, List[str]]):
@@ -141,8 +143,8 @@ def generate_caption(
             print(f"Input to model: {repr(tokenizer.decode(token[0]))}")
 
         generate_ids = text_model.generate(
-            torch.stack(tokens).squeeze(),
-            inputs_embeds=torch.stack(embeds).squeeze(),
+            torch.stack(tokens).squeeze() if len(tokens) > 1 else torch.stack(tokens).squeeze(0),
+            inputs_embeds=torch.stack(embeds).squeeze() if len(embeds) > 1 else torch.stack(embeds).squeeze(0),
             attention_mask=attention_mask,
             max_new_tokens=300,
             do_sample=True,
