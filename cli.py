@@ -47,7 +47,7 @@ def _process_caption_files(
         tokenizer, text_model, clip_model, image_adapter,
         images, caption_type, caption_length, options, name, custom_prompt, captions_map, batch_size)
 
-    if not output:
+    if not output or output == "json":
         for image_caption in image_caption_list:
             print(json.dumps({
                 "prompt": image_caption["prompt"],
