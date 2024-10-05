@@ -3,7 +3,7 @@ from typing import List, Dict
 import torch
 import torchvision.transforms.functional as TVF
 import PIL
-from click.core import batch
+import tqdm
 from transformers import PreTrainedTokenizerFast
 
 
@@ -62,7 +62,7 @@ def process_images(images: List[PIL.Image.Image]) -> List[torch.Tensor]:
         return TVF.normalize(TVF.pil_to_tensor(target_image).unsqueeze(
             0) / 255.0, [0.5], [0.5]).to('cuda')
 
-    return [process_image(image) for image in images]
+    return [process_image(image) for image in tqdm.tqdm(images, desc="Processing images")]
 
 
 def create_conversation_token(tokenizer, prompt: str):
@@ -111,7 +111,7 @@ def generate_captions(
     pixel_values = torch.stack(process_images(images)).squeeze() if len(images) > 1 else process_images(images)
     pixel_values = torch.split(pixel_values, batch_size) if len(images) > 1 else pixel_values
 
-    for pixel_value in pixel_values:
+    for pixel_value in tqdm.tqdm(pixel_values, desc="Generating captions"):
         # This results in Batch x Image Tokens x Features
         with torch.amp.autocast_mode.autocast('cuda', enabled=True):
             vision_outputs = clip_model(pixel_values=pixel_value, output_hidden_states=True)

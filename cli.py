@@ -2,7 +2,6 @@ import pathlib
 import click
 from tqdm import tqdm
 
-
 from captioning.file import caption_file
 from captioning.folder import caption_folder
 from captioning.profiling import caption_profile_image
@@ -18,7 +17,8 @@ def cli():
 
 @click.group('caption')
 def caption():
-    pass
+    # Load Models on captioning
+    load_models(config['clip_model'])
 
 
 # Setup Models
@@ -36,9 +36,6 @@ if __name__ == '__main__':
     # Read Config
     checkpoint_path = pathlib.Path(config['checkpoint_path'])
     APP_STATE["caption_map"] = config['captions']["map"]
-
-    # Load Models
-    load_models(config['clip_model'])
 
     # Application
     caption.add_command(caption_file)
