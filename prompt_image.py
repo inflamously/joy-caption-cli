@@ -3,8 +3,7 @@ from typing import List, Dict
 import torch
 import torchvision.transforms.functional as TVF
 import PIL
-from numpy import dtype
-from torch.linalg import multi_dot
+from transformers import PreTrainedTokenizerFast
 
 
 def select_prompt_type(caption_type: str, length: str | int, captions: Dict[str, List[str]]):
@@ -100,7 +99,7 @@ def calculate_preamble_length(tokenizer, convo_tokens, prompt_tokens):
 
 
 def generate_caption(
-        text_model, clip_model, image_adapter, tokenizer, images: List[PIL.Image.Image], convo_tokens, preamble_len):
+        text_model, clip_model, image_adapter, tokenizer: PreTrainedTokenizerFast, images: List[PIL.Image.Image], convo_tokens, preamble_len):
     convo_embeds = text_model.model.embed_tokens(convo_tokens.unsqueeze(0).to('cuda'))
 
     if len(images) <= 0: return
@@ -150,17 +149,10 @@ def generate_caption(
             do_sample=True,
             suppress_tokens=None)  # Uses the default which is temp=0.6, top_p=0.9
 
-        batch_captions = tokenizer.batch_decode(generate_ids, skip_special_tokens=False, clean_up_tokenization_spaces=False)
+        # Skip prompting text using [:, tokens[0].shape[1]]
+        trim_generate_ids = torch.stack([generate_ids[n:n + 1, tokens[n].shape[1]:] for n in range(0, len(generate_ids))]).squeeze()
+        batch_captions: List[str] = tokenizer.batch_decode(trim_generate_ids, skip_special_tokens=True, clean_up_tokenization_spaces=False)
         captions = captions + batch_captions
-
-        # Trim off the prompt
-        # generate_ids = generate_ids[:, input_ids.shape[1]:]
-        # if generate_ids[0][-1] == tokenizer.eos_token_id or generate_ids[0][-1] == tokenizer.convert_tokens_to_ids(
-        #         "<|eot_id|>"):
-        #     generate_ids = generate_ids[:, :-1]
-        # captions.append(
-        #     tokenizer.batch_decode(generate_ids, skip_special_tokens=False, clean_up_tokenization_spaces=False)[0])
-
     return captions
 
 
