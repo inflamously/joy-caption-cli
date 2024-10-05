@@ -102,9 +102,9 @@ def calculate_preamble_length(tokenizer, convo_tokens, prompt_tokens):
 def generate_captions(
     text_model, clip_model, image_adapter, tokenizer: PreTrainedTokenizerFast,
         images: List[PIL.Image.Image], convo_tokens, preamble_len, batch_size: int = 1):
-    convo_embeds = text_model.model.embed_tokens(convo_tokens.unsqueeze(0).to('cuda'))
-
     if len(images) <= 0: return
+
+    convo_embeds = text_model.model.embed_tokens(convo_tokens.unsqueeze(0).to('cuda'))
 
     resulting_captions: List[str] = []
 
@@ -112,11 +112,17 @@ def generate_captions(
     pixel_values = torch.split(pixel_values, batch_size) if len(images) > 1 else pixel_values
 
     for pixel_value in tqdm.tqdm(pixel_values, desc="Generating captions"):
+        clip_model.to('cuda')
+        image_adapter.to('cuda')
+
         # This results in Batch x Image Tokens x Features
         with torch.amp.autocast_mode.autocast('cuda', enabled=True):
             vision_outputs = clip_model(pixel_values=pixel_value, output_hidden_states=True)
-            embedded_images = image_adapter(vision_outputs.hidden_states)
-            embedded_images = embedded_images.to('cuda')
+            embedded_images = image_adapter(vision_outputs.hidden_states).to(dtype=torch.float16, device='cuda')
+            del vision_outputs
+
+        image_adapter.to('cpu')
+        clip_model.to('cpu')
 
         embeds = []
         tokens = []
@@ -124,7 +130,7 @@ def generate_captions(
         for n in range(0, embedded_images.shape[0]):
             embeds.append(torch.cat([
                 convo_embeds[:, :preamble_len].to(dtype=convo_embeds.dtype),
-                embedded_images[n:n+1, :, :].to(dtype=convo_embeds.dtype).to('cuda'),
+                embedded_images[n:n+1, :, :].to(dtype=convo_embeds.dtype),
                 convo_embeds[:, preamble_len:],  # The prompt and anything after it
             ], dim=1).to('cuda'))
 
@@ -135,7 +141,11 @@ def generate_captions(
                 convo_tokens[preamble_len:].unsqueeze(0),
             ], dim=1).to('cuda'))
 
+        del embedded_images
+        torch.cuda.empty_cache()
+
         # We take first because, embeds and tokens all shouuld be equal dimensions
+        # TODO: Optimize later... attention_mask = torch.ones((1, convo_tokens.shape[1] + embedded_images.shape[1]), device='cuda') <- are sizes real, check?
         attention_mask = torch.ones_like(tokens[0])
 
         # Debugging
@@ -154,6 +164,11 @@ def generate_captions(
         trim_generate_ids = torch.stack([generate_ids[n:n + 1, tokens[n].shape[1]:] for n in range(0, len(generate_ids))]).squeeze(1)
         batch_captions: List[str] = tokenizer.batch_decode(trim_generate_ids, skip_special_tokens=True, clean_up_tokenization_spaces=False)
         resulting_captions = resulting_captions + batch_captions
+
+        del embeds, tokens
+        torch.cuda.empty_cache()
+
+    clip_model.to('cuda')
     return resulting_captions
 
 

@@ -24,9 +24,9 @@
         "Write a {length} prompt for flux diffusion model which resembles a high-resolution scene, sharp details and vibrant contrast, showcasing a modern images with balanced lighting and natural shadow gradients. Ensure image is read clery on textures and a visually appealing aesthetic and design elements in the setting."
       ],
       "Training Flux Prompt": [
-        "Write a prompt for training high-resolution images with lots of details and vibrant colors. The prompt should must be sentences, modern, and contains words that define details dominantly. Ensure a aesthetically pleasing composition and realistic reproduction of the visual seen content.",
-        "Write a prompt within {word_count} for training high-resolution images with lots of details and vibrant colors. The prompt should must be sentences, modern, and contains words that define details dominantly. Ensure a aesthetically pleasing composition and realistic reproduction of the visual seen content.",
-        "Write a {length} prompt for training high-resolution images with lots of details and vibrant colors. The prompt should must be sentences, modern, and contains words that define details dominantly. Ensure a aesthetically pleasing composition and realistic reproduction of the visual seen content."
+        "Write a prompt about detailed high-res images with wide details. Ensure aesthetically pleasing and realistic composition. Rate quality and ignore all text.",
+        "Write a prompt within {word_count} about detailed high-res images with wide details. Ensure aesthetically pleasing and realistic composition. Rate quality and ignore all text.",
+        "Write a {length} prompt about detailed high-res images with wide details. Ensure aesthetically pleasing and realistic composition. Rate quality and ignore all text."
       ],
       "MidJourney": [
         "Write a MidJourney prompt for this image.",
