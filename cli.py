@@ -31,7 +31,7 @@ def load_models(clip_model_name: str):
 
 
 if __name__ == '__main__':
-    config = load_config()
+    config = load_config('config/config.json')
 
     # Read Config
     checkpoint_path = pathlib.Path(config['checkpoint_path'])
