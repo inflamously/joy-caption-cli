@@ -1,6 +1,5 @@
 import pathlib
 import click
-from tqdm import tqdm
 
 from captioning.file import caption_file
 from captioning.folder import caption_folder
