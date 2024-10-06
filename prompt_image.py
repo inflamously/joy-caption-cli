@@ -116,10 +116,9 @@ def generate_captions(
         image_adapter.to('cuda')
 
         # This results in Batch x Image Tokens x Features
-        with torch.amp.autocast_mode.autocast('cuda', enabled=True):
-            vision_outputs = clip_model(pixel_values=pixel_value, output_hidden_states=True)
-            embedded_images = image_adapter(vision_outputs.hidden_states).to(dtype=torch.float16, device='cuda')
-            del vision_outputs
+        vision_outputs = clip_model(pixel_values=pixel_value, output_hidden_states=True)
+        embedded_images = image_adapter(vision_outputs.hidden_states).to('cuda')
+        del vision_outputs
 
         image_adapter.to('cpu')
         clip_model.to('cpu')
@@ -158,7 +157,8 @@ def generate_captions(
             attention_mask=attention_mask,
             max_new_tokens=300,
             do_sample=True,
-            suppress_tokens=None)  # Uses the default which is temp=0.6, top_p=0.9
+            suppress_tokens=None)
+        # Uses the default which is temp=0.6, top_p=0.9
 
         # Skip prompting text using [:, tokens[0].shape[1]]
         trim_generate_ids = torch.stack([generate_ids[n:n + 1, tokens[n].shape[1]:] for n in range(0, len(generate_ids))]).squeeze(1)
@@ -169,6 +169,7 @@ def generate_captions(
         torch.cuda.empty_cache()
 
     clip_model.to('cuda')
+    image_adapter.to('cuda')
     return resulting_captions
 
 
