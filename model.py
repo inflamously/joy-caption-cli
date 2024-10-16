@@ -3,12 +3,24 @@ import torch
 from transformers import AutoModel, AutoTokenizer, PreTrainedTokenizer, PreTrainedTokenizerFast, \
     AutoModelForCausalLM
 from image_adapter import ImageAdapter
+from state import APP_STATE
+
+
+# Setup Models
+def load_models(clip_model_name: str, checkpoint_path: pathlib.Path):
+    APP_STATE["clip_model"] = load_clip_model(clip_model_name)
+    load_vision_model(checkpoint_path, APP_STATE["clip_model"])
+    APP_STATE["tokenizer"] = load_tokenizer(checkpoint_path)
+    APP_STATE["text_model"] = load_llm(checkpoint_path)
+    APP_STATE["image_adapter"] = load_image_adapter(checkpoint_path, APP_STATE["clip_model"], APP_STATE["text_model"])
+
 
 def load_clip_model(clip_path: str):
     print("Loading CLIP")
     clip_model = AutoModel.from_pretrained(clip_path)
     clip_model = clip_model.vision_model
     return clip_model
+
 
 def load_vision_model(checkpoint_path: pathlib.Path, clip_model):
     print("Loading VLM's custom vision model")
@@ -39,6 +51,7 @@ def load_llm(checkpoint_path: pathlib.Path):
         checkpoint_path / "text_model", device_map=0, torch_dtype=torch.bfloat16)
     text_model.eval()
     return text_model
+
 
 def load_image_adapter(checkpoint_path: pathlib.Path, clip_model, text_model):
     print("Loading image adapter")

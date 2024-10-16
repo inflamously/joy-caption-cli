@@ -195,8 +195,7 @@ def caption_images(
         name_input: str, custom_prompt: str, captions: Dict[str, List[str]],
         batch_size: int = 1):
 
-    prompt_str = create_prompt_for_vlm(
-        caption_type, caption_length, extra_options, name_input, custom_prompt, captions)
+    prompt_str = create_prompt_for_vlm(caption_type, caption_length, extra_options, name_input, custom_prompt, captions)
     convo_tokens = create_conversation_token(tokenizer, prompt_str)
     prompt_tokens = create_prompt_tokens(tokenizer, prompt_str)
     preamble_len = calculate_preamble_length(tokenizer, convo_tokens, prompt_tokens)

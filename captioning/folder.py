@@ -1,9 +1,12 @@
 import os
+import pathlib
 from typing import List
 
 import click
 
 from captioning.files import process_caption_files
+from model import load_models
+from state import APP_STATE
 
 
 @click.command('folder')
@@ -18,7 +21,10 @@ from captioning.files import process_caption_files
 def caption_folder(
         path: str, output: str, name: str, caption_type: str, caption_length: str,
         extra_options: List[str], custom_prompt: str, batch_size: int):
+    # Load Models on captioning
+    load_models(APP_STATE['clip_model_name'], APP_STATE['checkpoint_path'])
     _process_caption_folder(path, output, name, caption_type, caption_length, extra_options, custom_prompt, batch_size)
+
 
 def _process_caption_folder(
         path: str, output: str, name: str, caption_type: str, caption_length: str,
