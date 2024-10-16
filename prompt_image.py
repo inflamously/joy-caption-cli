@@ -1,9 +1,10 @@
 from typing import List, Dict
 
 import torch
-import torchvision.transforms.functional as TVF
+import torchvision.transforms.functional
 import PIL
 import tqdm
+from torchvision import transforms
 from transformers import PreTrainedTokenizerFast
 
 
@@ -57,12 +58,12 @@ def create_prompt_for_vlm(
 
 def process_images(images: List[PIL.Image.Image]) -> List[torch.Tensor]:
     def process_image(source_image: PIL.Image.Image) -> torch.Tensor:
-        target_image = source_image.resize(
-            (384, 384), PIL.Image.LANCZOS) if source_image.width != 384 or source_image.height != 384 else source_image
-        return TVF.normalize(TVF.pil_to_tensor(target_image).unsqueeze(
+        target_image = source_image.resize((384, 384),
+                                           PIL.Image.LANCZOS) if source_image.width != 384 or source_image.height != 384 else source_image
+        return transforms.functional.normalize(transforms.functional.pil_to_tensor(target_image).unsqueeze(
             0) / 255.0, [0.5], [0.5]).to('cuda')
 
-    return [process_image(image) for image in tqdm.tqdm(images, desc="Processing images")]
+    return [process_image(image) for image in tqdm.tqdm(images, desc="Tensoring images")]
 
 
 def create_conversation_token(tokenizer, prompt: str):
@@ -99,29 +100,26 @@ def calculate_preamble_length(tokenizer, convo_tokens, prompt_tokens):
     return eot_id_indices[1] - prompt_tokens.shape[0]  # Number of tokens before the prompt
 
 
+def break_list_into_chunks(inputs: List, chunk_size: int) -> List:
+    return [inputs[i * chunk_size:(i + 1) * chunk_size] for i in range((len(inputs) + chunk_size - 1) // chunk_size)]
+
+
 def generate_captions(
-    text_model, clip_model, image_adapter, tokenizer: PreTrainedTokenizerFast,
+        text_model, clip_model, image_adapter, tokenizer: PreTrainedTokenizerFast,
         images: List[PIL.Image.Image], convo_tokens, preamble_len, batch_size: int = 1):
     if len(images) <= 0: return
 
     convo_embeds = text_model.model.embed_tokens(convo_tokens.unsqueeze(0).to('cuda'))
-
     resulting_captions: List[str] = []
+    image_chunks = break_list_into_chunks(images, batch_size) if batch_size > 1 else images
 
-    pixel_values = torch.stack(process_images(images)).squeeze() if len(images) > 1 else process_images(images)
-    pixel_values = torch.split(pixel_values, batch_size) if len(images) > 1 else pixel_values
-
-    for pixel_value in tqdm.tqdm(pixel_values, desc="Generating captions"):
-        clip_model.to('cuda')
-        image_adapter.to('cuda')
+    for chunk in tqdm.tqdm(image_chunks, desc="Processing images"):
+        pixel_values = torch.stack(process_images(chunk if batch_size > 1 else [chunk])).squeeze(1)  # torch.stack(process_images(images)).squeeze() if len(images) > 1 else process_images(images)
 
         # This results in Batch x Image Tokens x Features
-        vision_outputs = clip_model(pixel_values=pixel_value, output_hidden_states=True)
+        vision_outputs = clip_model(pixel_values=pixel_values, output_hidden_states=True)
         embedded_images = image_adapter(vision_outputs.hidden_states).to('cuda')
         del vision_outputs
-
-        image_adapter.to('cpu')
-        clip_model.to('cpu')
 
         embeds = []
         tokens = []
@@ -129,7 +127,7 @@ def generate_captions(
         for n in range(0, embedded_images.shape[0]):
             embeds.append(torch.cat([
                 convo_embeds[:, :preamble_len].to(dtype=convo_embeds.dtype),
-                embedded_images[n:n+1, :, :].to(dtype=convo_embeds.dtype),
+                embedded_images[n:n + 1, :, :].to(dtype=convo_embeds.dtype),
                 convo_embeds[:, preamble_len:],  # The prompt and anything after it
             ], dim=1).to('cuda'))
 
@@ -161,15 +159,15 @@ def generate_captions(
         # Uses the default which is temp=0.6, top_p=0.9
 
         # Skip prompting text using [:, tokens[0].shape[1]]
-        trim_generate_ids = torch.stack([generate_ids[n:n + 1, tokens[n].shape[1]:] for n in range(0, len(generate_ids))]).squeeze(1)
-        batch_captions: List[str] = tokenizer.batch_decode(trim_generate_ids, skip_special_tokens=True, clean_up_tokenization_spaces=False)
+        trim_generate_ids = torch.stack(
+            [generate_ids[n:n + 1, tokens[n].shape[1]:] for n in range(0, len(generate_ids))]).squeeze(1)
+        batch_captions: List[str] = tokenizer.batch_decode(trim_generate_ids, skip_special_tokens=True,
+                                                           clean_up_tokenization_spaces=False)
         resulting_captions = resulting_captions + batch_captions
 
         del embeds, tokens
         torch.cuda.empty_cache()
 
-    clip_model.to('cuda')
-    image_adapter.to('cuda')
     return resulting_captions
 
 
@@ -194,7 +192,6 @@ def caption_images(
         caption_type: str, caption_length: str | int, extra_options: list[str],
         name_input: str, custom_prompt: str, captions: Dict[str, List[str]],
         batch_size: int = 1):
-
     prompt_str = create_prompt_for_vlm(caption_type, caption_length, extra_options, name_input, custom_prompt, captions)
     convo_tokens = create_conversation_token(tokenizer, prompt_str)
     prompt_tokens = create_prompt_tokens(tokenizer, prompt_str)
@@ -204,7 +201,7 @@ def caption_images(
         text_model, clip_model, image_adapter, tokenizer, images, convo_tokens, preamble_len, batch_size)
 
     return [{
-            "image": images[img_idx],
-            "prompt": prompt_str,
-            "caption": captions[img_idx]
-        } for img_idx in range(len(images))]
+        "image": images[img_idx],
+        "prompt": prompt_str,
+        "caption": captions[img_idx]
+    } for img_idx in range(len(images))]
