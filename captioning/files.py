@@ -1,11 +1,24 @@
 import json
 import os
+from concurrent.futures.thread import ThreadPoolExecutor
 from typing import List
 
 import PIL
+from tqdm import tqdm
 
 from prompt_image import caption_images
 from state import APP_STATE
+
+
+def transform_image(file: str):
+    return PIL.Image.open(file).convert('RGB').resize((384, 384), PIL.Image.LANCZOS)
+
+
+def transform_images(files: List[str]):
+    print("processing images")
+    with ThreadPoolExecutor() as executor:
+        images = list(tqdm(executor.map(transform_image, files), total=len(files)))
+    return images
 
 
 def process_caption_files(
@@ -21,7 +34,8 @@ def process_caption_files(
     if not APP_STATE["caption_map"]:
         raise Exception("config.json -> captions.map cannot be undefined!")
 
-    images = [PIL.Image.open(file).convert('RGB').resize((384, 384), PIL.Image.LANCZOS) for file in files]
+    images = transform_images(
+        files)  #
     options = extra_options if extra_options else []
     image_caption_list = caption_images(
         APP_STATE["tokenizer"], APP_STATE["text_model"], APP_STATE["clip_model"], APP_STATE["image_adapter"],
