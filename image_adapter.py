@@ -1,6 +1,13 @@
 import torch
 from torch import nn
 
+# File: image_adapter.py
+# Author: fancyfeast
+# Modified by: nflamously
+# Original License: Apache License 2.0 / unknown
+# Changes:
+# * None
+# This code was originally authored by fancyfeast. All modifications are documented and follow the terms of the original license.
 
 class ImageAdapter(nn.Module):
     def __init__(self, input_features: int, output_features: int, ln1: bool, pos_emb: bool, num_image_tokens: int,

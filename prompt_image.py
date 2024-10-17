@@ -7,6 +7,13 @@ import tqdm
 from torchvision import transforms
 from transformers import PreTrainedTokenizerFast
 
+# File: prompt_image.py
+# Author: fancyfeast
+# Modified by: nflamously
+# Original License: Apache License 2.0 / unknown
+# Changes:
+# * Rewritten some of the code for better performance and readability
+# This code was originally authored by fancyfeast. All modifications are documented and follow the terms of the original license.
 
 def select_prompt_type(caption_type: str, length: str | int, captions: Dict[str, List[str]]):
     # Build prompt

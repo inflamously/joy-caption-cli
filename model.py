@@ -5,6 +5,13 @@ from transformers import AutoModel, AutoTokenizer, PreTrainedTokenizer, PreTrain
 from image_adapter import ImageAdapter
 from state import APP_STATE
 
+# File: model.py
+# Author: fancyfeast
+# Modified by: nflamously
+# Original License: Apache License 2.0 / unknown
+# Changes:
+# * split import and loaders into own functions to be used. Extends app with a state class.
+# This code was originally authored by fancyfeast. All modifications are documented and follow the terms of the original license.
 
 # Setup Models
 def load_models(clip_model_name: str, checkpoint_path: pathlib.Path):
@@ -23,7 +30,7 @@ def load_clip_model(clip_path: str):
 
 
 def load_vision_model(checkpoint_path: pathlib.Path, clip_model):
-    print("Loading VLM's custom vision model")
+    print("Loading custom vision model")
     assert (checkpoint_path / "clip_model.pt").exists()
 
     checkpoint = torch.load(checkpoint_path / "clip_model.pt", map_location='cpu', weights_only=True)
@@ -46,9 +53,8 @@ def load_tokenizer(checkpoint_path: pathlib.Path):
 
 
 def load_llm(checkpoint_path: pathlib.Path):
-    print("Loading VLM's custom text model")
-    text_model = AutoModelForCausalLM.from_pretrained(
-        checkpoint_path / "text_model", device_map=0, torch_dtype=torch.bfloat16)
+    print("Loading custom text model")
+    text_model = AutoModelForCausalLM.from_pretrained(checkpoint_path / "text_model", device_map=0, torch_dtype=torch.float16)
     text_model.eval()
     return text_model
 
@@ -56,8 +62,7 @@ def load_llm(checkpoint_path: pathlib.Path):
 def load_image_adapter(checkpoint_path: pathlib.Path, clip_model, text_model):
     print("Loading image adapter")
     image_adapter = ImageAdapter(clip_model.config.hidden_size, text_model.config.hidden_size, False, False, 38, False)
-    image_adapter.load_state_dict(
-        torch.load(checkpoint_path / "image_adapter.pt", map_location="cpu", weights_only=True))
+    image_adapter.load_state_dict(torch.load(checkpoint_path / "image_adapter.pt", map_location="cpu", weights_only=True))
     image_adapter.eval()
     image_adapter.to("cuda")
     return image_adapter
