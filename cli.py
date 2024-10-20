@@ -12,6 +12,10 @@ from state import APP_STATE
 def cli():
     pass
 
+@click.command()
+def version():
+    return "1.0"
+
 
 @click.group('caption')
 def caption():
@@ -30,6 +34,7 @@ if __name__ == '__main__':
     caption.add_command(caption_file)
     caption.add_command(caption_folder)
     caption.add_command(caption_profile_image)
+    cli.add_command(version)
     cli.add_command(caption)
 
     cli()

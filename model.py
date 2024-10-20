@@ -1,9 +1,11 @@
+import os.path
 import pathlib
 import torch
 from transformers import AutoModel, AutoTokenizer, PreTrainedTokenizer, PreTrainedTokenizerFast, \
     AutoModelForCausalLM
 from image_adapter import ImageAdapter
 from state import APP_STATE
+
 
 # File: model.py
 # Author: fancyfeast
@@ -31,7 +33,9 @@ def load_clip_model(clip_path: str):
 
 def load_vision_model(checkpoint_path: pathlib.Path, clip_model):
     print("Loading custom vision model")
-    assert (checkpoint_path / "clip_model.pt").exists()
+    clip_model_path = checkpoint_path / "clip_model.pt"
+    if not os.path.exists(clip_model_path):
+        raise Exception("Failed to load CLIP model, path ${} does not exist.".format(clip_model_path))
 
     checkpoint = torch.load(checkpoint_path / "clip_model.pt", map_location='cpu', weights_only=True)
     checkpoint = {k.replace("_orig_mod.module.", ""): v for k, v in checkpoint.items()}
@@ -54,7 +58,8 @@ def load_tokenizer(checkpoint_path: pathlib.Path):
 
 def load_llm(checkpoint_path: pathlib.Path):
     print("Loading custom text model")
-    text_model = AutoModelForCausalLM.from_pretrained(checkpoint_path / "text_model", device_map=0, torch_dtype=torch.float16)
+    text_model = AutoModelForCausalLM.from_pretrained(checkpoint_path / "text_model", device_map=0,
+                                                      torch_dtype=torch.float16)
     text_model.eval()
     return text_model
 
@@ -62,7 +67,8 @@ def load_llm(checkpoint_path: pathlib.Path):
 def load_image_adapter(checkpoint_path: pathlib.Path, clip_model, text_model):
     print("Loading image adapter")
     image_adapter = ImageAdapter(clip_model.config.hidden_size, text_model.config.hidden_size, False, False, 38, False)
-    image_adapter.load_state_dict(torch.load(checkpoint_path / "image_adapter.pt", map_location="cpu", weights_only=True))
+    image_adapter.load_state_dict(
+        torch.load(checkpoint_path / "image_adapter.pt", map_location="cpu", weights_only=True))
     image_adapter.eval()
     image_adapter.to("cuda")
     return image_adapter
