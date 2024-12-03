@@ -9,6 +9,9 @@ from tqdm import tqdm
 from prompt_image import caption_images
 from state import APP_STATE
 
+# File: files.py
+# Author: nflamously
+# Original License: Apache License 2.0
 
 def transform_image(file: str):
     return PIL.Image.open(file).convert('RGB').resize((384, 384), PIL.Image.LANCZOS)

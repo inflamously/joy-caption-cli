@@ -8,6 +8,11 @@
         "Write a descriptive caption for this image in a formal tone within {word_count} words.",
         "Write a {length} descriptive caption for this image in a formal tone."
       ],
+      "Describe": [
+        "You are an AI trained to generate highly descriptive and accurate captions for images. Provide caption that capture essential visible details, colors, textures, shapes, objects, their relationships, and subtle or small features",
+        "You are an AI trained to generate highly descriptive and accurate captions for images. Provide caption that capture essential visible details, colors, textures, shapes, objects, their relationships, and subtle or small features within {word_count} words.",
+        "You are an AI trained to generate highly descriptive and accurate captions for images. Provide {length} caption that capture essential visible details, colors, textures, shapes, objects, their relationships, and subtle or small features"
+      ],
       "Descriptive (Informal)": [
         "Write a descriptive caption for this image in a casual tone.",
         "Write a descriptive caption for this image in a casual tone within {word_count} words.",

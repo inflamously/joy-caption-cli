@@ -2,10 +2,13 @@ from typing import List
 
 import click
 
-from captioning.files import process_caption_files
+from captions.joy.files import process_caption_files
 from model import load_models
 from state import APP_STATE
 
+# File: file.py
+# Author: nflamously
+# Original License: Apache License 2.0
 
 @click.command('file')
 @click.argument('file')

@@ -7,6 +7,8 @@ import tqdm
 from torchvision import transforms
 from transformers import PreTrainedTokenizerFast
 
+from captions.utils import break_list_into_chunks
+
 # File: prompt_image.py
 # Author: fancyfeast
 # Modified by: nflamously
@@ -105,10 +107,6 @@ def calculate_preamble_length(tokenizer, convo_tokens, prompt_tokens):
     eot_id_indices = (convo_tokens == eot_token).nonzero(as_tuple=True)[0].tolist()
     assert len(eot_id_indices) == 2, f"Expected 2 <|eot_id|> tokens, got {len(eot_id_indices)}"
     return eot_id_indices[1] - prompt_tokens.shape[0]  # Number of tokens before the prompt
-
-
-def break_list_into_chunks(inputs: List, chunk_size: int) -> List:
-    return [inputs[i * chunk_size:(i + 1) * chunk_size] for i in range((len(inputs) + chunk_size - 1) // chunk_size)]
 
 
 def generate_captions(

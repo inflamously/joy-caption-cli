@@ -1,6 +1,9 @@
 import pathlib
 from typing import Any, TypedDict
 
+# File: state.py
+# Author: nflamously
+# Original License: Apache License 2.0
 
 # TODO: Could be Type near future
 class AppState(TypedDict):
