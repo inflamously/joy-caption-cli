@@ -43,7 +43,7 @@ func Service() {
 		}
 	}(srv, comm)
 
-	for true {
+	for {
 		select {
 		case status := <-comm:
 			if status == EXIT || status == PANIC {
