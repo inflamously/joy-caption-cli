@@ -1,0 +1,107 @@
+
+:root {
+    --primary: #d7b404;
+    --secondary: #334155;
+    --quaternary: skyblue;
+    --tertiary: #fafafa;
+    --background: #dddddd;
+    --heading-color: #1e293b;
+    --link-color: var(--quaternary);
+    --border-color: #e2e8f0;
+    --shadow-color: rgba(0, 0, 0, 0.2);
+    --font-family-sans: 'Roboto', 'Inter', sans-serif;
+    --spacing-base: 2rem;
+    --border-radius: 0.5rem;
+    --transition-base: all 0.2s ease-in-out;
+    --base-padding: 1rem;
+    --bottom-space: 0.25rem;
+    --input-padding: 0.5rem;
+}
+
+/* Base Styles with Material-Inspired Padding */
+body {
+    font-family: var(--font-family-sans), serif;
+    font-size: 1rem;
+    line-height: 1.6;
+    color: var(--secondary);
+    background-color: var(--background);
+    padding: var(--base-padding);
+    max-width: 1024px;
+    margin: 0 auto;
+    transition: var(--transition-base);
+}
+
+/* Headings with Balanced Sizes */
+h1 { font-size: 2.25rem; }
+h2 { font-size: 2rem; }
+h3 { font-size: 1.75rem; }
+h4 { font-size: 1.5rem; }
+
+h1, h2, h3, h4, h5, h6 {
+    color: var(--heading-color);
+    margin-bottom: calc(var(--spacing-base) * 1.5);
+}
+
+/* Material Design-Inspired Buttons */
+button, input[type="submit"] {
+    padding: 0.5rem 1rem;
+    background-color: var(--primary);
+    color: var(--secondary);
+    font-weight: 500;
+    border: none;
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    box-shadow: 0 2px 4px var(--shadow-color);
+    transition: box-shadow 0.3s;
+}
+button:hover, input[type="submit"]:hover {
+    box-shadow: 0 4px 6px var(--shadow-color);
+}
+
+/* Links */
+a {
+    color: var(--link-color);
+    text-decoration: none;
+    transition: opacity 0.2s;
+}
+a:hover { opacity: 0.8; }
+
+/* Forms */
+form {
+    display: flex;
+    flex-direction: column;
+    padding: calc(var(--base-padding) * 0.5) 0;
+    gap: var(--base-padding);
+    margin: 0
+}
+
+input, select, textarea {
+    padding: var(--input-padding);
+    margin-bottom: var(--bottom-space);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    width: 100%;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+    outline: none;
+    border-color: var(--link-color);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+}
+
+/* Material Card Style */
+section, article, aside {
+    background-color: var(--tertiary);
+    padding: var(--base-padding);
+    box-shadow: 0 2px 4px var(--shadow-color);
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+    body { padding: var(--base-padding); }
+    h1 { font-size: 2rem; }
+    h2 { font-size: 1.75rem; }
+}

@@ -11,10 +11,11 @@ const app = {
             return false;
         })
 
-        fields.path.addEventListener('click', (ev) => {
-            fetch("http://localhost:5678/api/v1/paths").then((response) => {
-                console.log(response)
-            })
+        fields.path.addEventListener('change', (ev) => {
+            console.log(ev);
+            // fetch(`http://localhost:5678/api/v1/paths?file=${}`).then((response) => {
+            //     console.log(response)
+            // })
         })
     }
 }
@@ -22,7 +23,7 @@ const app = {
 
 function main() {
     fields.form = document.getElementById('joy-caption-form')
-    fields.path = document.getElementById('folder-selection')
+    fields.path = document.getElementById('path')
 
     app.registerEvents()
 }

@@ -4,12 +4,10 @@ import (
 	"fmt"
 	"joy-caption-ui/process"
 	"net/http"
-	"os"
 	"time"
 )
 
 func Service(comm chan ServerStatus) *http.Server {
-
 	srv := &http.Server{
 		Addr:              ":5678",
 		ReadTimeout:       500 * time.Second,
@@ -20,20 +18,19 @@ func Service(comm chan ServerStatus) *http.Server {
 	}
 
 	go func(srv *http.Server, comm chan ServerStatus) {
-		workingDir, err := os.Getwd()
-		if err != nil {
-			panic(err)
+		hasAssets := CheckAssets()
+		if !hasAssets {
+			panic("<workingDir>/public assets folder must exist, please retry running from correct working directory")
 		}
-		indexPath := http.Dir(".")
-		fmt.Printf("Fileserver at: %s %s", workingDir, indexPath)
-		fileService := http.FileServer(indexPath)
-		_ = &process.ProcessParams{}
+
+		fileService := http.FileServer(http.Dir("public"))
+		proc := &process.ProcessParams{}
 		fmt.Println("Starting server on port 5678")
 		mux := http.NewServeMux()
 		mux.Handle("/", fileService)
-		// TODO: Handle Path due to working dir
-		//mux.HandleFunc("/", func(writer http.ResponseWriter, request *http.Request) {
-		//	if strings.Contains(request.URL.Path, "api/v1/") {
+		mux.HandleFunc("/api/v1/", proc.ServeHTTP)
+		//mux.HandleFunc("/api/v1/", func(writer http.ResponseWriter, request *http.Request) {
+		//	if strings.Contains(request.URL.Path, "") {
 		//		fmt.Println("process request")
 		//		proc.ServeHTTP(writer, request)
 		//	} else {
@@ -43,7 +40,7 @@ func Service(comm chan ServerStatus) *http.Server {
 		//})
 		srv.Handler = mux
 		comm <- READY
-		err = srv.ListenAndServe()
+		err := srv.ListenAndServe()
 		if err != nil {
 			comm <- PANIC
 			panic(err)
