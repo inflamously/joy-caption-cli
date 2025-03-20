@@ -25,7 +25,7 @@ def version():
     return "1.0"
 
 
-@click.group('caption')
+@click.group('joycaption')
 def caption():
     pass
 

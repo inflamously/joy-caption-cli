@@ -27,7 +27,7 @@ def select_prompt_type(caption_type: str, length: str | int, captions: Dict[str,
     elif isinstance(length, str):
         map_idx = 2
     else:
-        raise ValueError(f"Invalid caption length: {length}")
+        raise ValueError(f"Invalid joycaption length: {length}")
 
     return captions[caption_type][map_idx]
 
@@ -209,5 +209,5 @@ def caption_images(
     return [{
         "image": images[img_idx],
         "prompt": prompt_str,
-        "caption": captions[img_idx]
+        "joycaption": captions[img_idx]
     } for img_idx in range(len(images))]

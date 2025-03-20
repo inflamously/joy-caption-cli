@@ -48,11 +48,11 @@ def process_caption_files(
         for image_caption in image_caption_list:
             print(json.dumps({
                 "prompt": image_caption["prompt"],
-                "caption": image_caption["caption"]
+                "joycaption": image_caption["joycaption"]
             }))
     else:
         if output == 'text':
             for file_idx in range(len(files)):
-                caption = image_caption_list[file_idx]["caption"]
+                caption = image_caption_list[file_idx]["joycaption"]
                 with open(files[file_idx][:-4] + '.txt', 'w') as f:
                     f.write(caption)
