@@ -1,7 +1,7 @@
 import json
 from typing import Dict, Any
 
-# File: images_query.py
+# File: load.py
 # Author: nflamously
 # Original License: Apache License 2.0
 

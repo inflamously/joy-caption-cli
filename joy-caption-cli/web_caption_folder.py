@@ -8,7 +8,7 @@ from initialization import setup_config
 from model import load_models
 from state import APP_STATE
 
-# File: images_query.py
+# File: web_caption_folder.py
 # Author: nflamously
 # Original License: Apache License 2.0
 
