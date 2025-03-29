@@ -1,8 +1,9 @@
 import os.path
 import pathlib
 import torch
+from peft import PeftModel
 from transformers import AutoModel, AutoTokenizer, PreTrainedTokenizer, PreTrainedTokenizerFast, \
-    AutoModelForCausalLM
+    AutoModelForCausalLM, LlamaForCausalLM
 from image_adapter import ImageAdapter
 from state import APP_STATE
 
@@ -13,6 +14,7 @@ from state import APP_STATE
 # Original License: Apache License 2.0 / unknown
 # Changes:
 # * split import and loaders into own functions to be used. Extends app with a state class.
+# * Use proper loading of LORA and using PEFT and propery MODEL to load weights in and getting ready to action
 # This code was originally authored by fancyfeast. All modifications are documented and follow the terms of the original license.
 
 # Setup Models
@@ -58,10 +60,25 @@ def _load_tokenizer(checkpoint_path: pathlib.Path):
 
 def _load_llm(checkpoint_path: pathlib.Path):
     print("Loading custom text model")
-    text_model = AutoModelForCausalLM.from_pretrained(checkpoint_path / "text_model", device_map=0,
-                                                      torch_dtype=torch.float16)
-    text_model.eval()
-    return text_model
+    print(f"Loading LORA for base model: {checkpoint_path}")
+    # Load the base model (adjust device_map, load_in_8bit, torch_dtype as needed for your hardware)
+    base_model = LlamaForCausalLM.from_pretrained(
+        "unsloth/Meta-Llama-3.1-8B-Instruct",
+        torch_dtype=torch.float16,  # Or bfloat16 if supported and preferred
+        device_map="auto",  # Or specific device "cuda:0"
+        load_in_8bit=True,  # Optional: If you need quantization
+    )
+
+    print(f"Loading PEFT adapter from")
+    # Load the adapter onto the base model
+    model = PeftModel.from_pretrained(
+        base_model,
+        checkpoint_path / "text_model",
+        torch_dtype=torch.float16, # Usually inherits from base model
+        device_map="auto"
+    )
+    # Optional: Merge adapters into the base model if you don't need to switch adapters later
+    return model.merge_and_unload()
 
 
 def _load_image_adapter(checkpoint_path: pathlib.Path, clip_model, text_model):
