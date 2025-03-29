@@ -2,8 +2,7 @@ import os.path
 import pathlib
 import torch
 from peft import PeftModel
-from transformers import AutoModel, AutoTokenizer, PreTrainedTokenizer, PreTrainedTokenizerFast, \
-    AutoModelForCausalLM, LlamaForCausalLM, BitsAndBytesConfig
+from transformers import AutoModel, AutoTokenizer, PreTrainedTokenizer, PreTrainedTokenizerFast, LlamaForCausalLM, BitsAndBytesConfig
 from image_adapter import ImageAdapter
 from state import APP_STATE
 
@@ -77,6 +76,7 @@ def _load_llm(checkpoint_path: pathlib.Path):
         torch_dtype=torch.float16, # Usually inherits from base model
         device_map="auto"
     )
+
     # Optional: Merge adapters into the base model if you don't need to switch adapters later
     return model.merge_and_unload()
 

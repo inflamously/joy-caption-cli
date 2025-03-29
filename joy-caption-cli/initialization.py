@@ -3,6 +3,9 @@ import pathlib
 from config.load import load_config
 from state import APP_STATE
 
+# File: images_query.py
+# Author: nflamously
+# Original License: Apache License 2.0
 
 def setup_config():
     config = load_config('config/config.json')

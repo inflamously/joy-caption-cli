@@ -8,6 +8,10 @@ from initialization import setup_config
 from model import load_models
 from state import APP_STATE
 
+# File: images_query.py
+# Author: nflamously
+# Original License: Apache License 2.0
+
 def generate_captions(
         folder,
         type,
@@ -46,7 +50,7 @@ with gr.Blocks(title="Image Caption Generator") as app:
     extra_instruction = gr.Textbox(value="Describe the quality of the image as details as possible.",
                                    label="Extra Instruction")
     custom_prompt = gr.Textbox(value="", label="Custom Prompt")
-    batch_size = gr.Slider(minimum=1, maximum=16, step=1, value=4, label="Batch Size")
+    batch_size = gr.Slider(minimum=1, maximum=16, step=1, value=2, label="Batch Size")
     generator = gr.Button("Generate Captions")
     generator.click(fn=generate_captions,
                     inputs=[folder_selection, caption_type, caption_length, extra_instruction, custom_prompt,
