@@ -1,5 +1,6 @@
 import json
 import os
+import codecs
 from concurrent.futures.thread import ThreadPoolExecutor
 from typing import List
 
@@ -53,6 +54,6 @@ def process_caption_files(
     else:
         if output == 'text':
             for file_idx in range(len(files)):
-                caption = image_caption_list[file_idx]["joycaption"]
-                with open(files[file_idx][:-4] + '.txt', 'w') as f:
+                caption: str = image_caption_list[file_idx]["joycaption"]
+                with codecs.open(files[file_idx][:-4] + '.txt', 'w', 'utf-8') as f:
                     f.write(caption)

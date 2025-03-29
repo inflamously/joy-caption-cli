@@ -50,7 +50,7 @@ with gr.Blocks(title="Image Caption Generator") as app:
     extra_instruction = gr.Textbox(value="Describe the quality of the image as details as possible.",
                                    label="Extra Instruction")
     custom_prompt = gr.Textbox(value="", label="Custom Prompt")
-    batch_size = gr.Slider(minimum=1, maximum=16, step=1, value=2, label="Batch Size")
+    batch_size = gr.Slider(minimum=1, maximum=40, step=1, value=2, label="Batch Size")
     generator = gr.Button("Generate Captions")
     generator.click(fn=generate_captions,
                     inputs=[folder_selection, caption_type, caption_length, extra_instruction, custom_prompt,
