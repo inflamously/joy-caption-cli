@@ -17,21 +17,21 @@ from state import APP_STATE
 
 # Setup Models
 def load_models(clip_model_name: str, checkpoint_path: pathlib.Path):
-    APP_STATE["clip_model"] = load_clip_model(clip_model_name)
-    load_vision_model(checkpoint_path, APP_STATE["clip_model"])
-    APP_STATE["tokenizer"] = load_tokenizer(checkpoint_path)
-    APP_STATE["text_model"] = load_llm(checkpoint_path)
-    APP_STATE["image_adapter"] = load_image_adapter(checkpoint_path, APP_STATE["clip_model"], APP_STATE["text_model"])
+    APP_STATE["clip_model"] = _load_clip_model(clip_model_name)
+    _load_vision_model(checkpoint_path, APP_STATE["clip_model"])
+    APP_STATE["tokenizer"] = _load_tokenizer(checkpoint_path)
+    APP_STATE["text_model"] = _load_llm(checkpoint_path)
+    APP_STATE["image_adapter"] = _load_image_adapter(checkpoint_path, APP_STATE["clip_model"], APP_STATE["text_model"])
 
 
-def load_clip_model(clip_path: str):
+def _load_clip_model(clip_path: str):
     print("Loading CLIP")
     clip_model = AutoModel.from_pretrained(clip_path)
     clip_model = clip_model.vision_model
     return clip_model
 
 
-def load_vision_model(checkpoint_path: pathlib.Path, clip_model):
+def _load_vision_model(checkpoint_path: pathlib.Path, clip_model):
     print("Loading custom vision model")
     clip_model_path = checkpoint_path / "clip_model.pt"
     if not os.path.exists(clip_model_path):
@@ -47,7 +47,7 @@ def load_vision_model(checkpoint_path: pathlib.Path, clip_model):
     clip_model.to("cuda")
 
 
-def load_tokenizer(checkpoint_path: pathlib.Path):
+def _load_tokenizer(checkpoint_path: pathlib.Path):
     # Tokenizer
     print("Loading tokenizer")
     tokenizer = AutoTokenizer.from_pretrained(checkpoint_path / "text_model", use_fast=True)
@@ -56,7 +56,7 @@ def load_tokenizer(checkpoint_path: pathlib.Path):
     return tokenizer
 
 
-def load_llm(checkpoint_path: pathlib.Path):
+def _load_llm(checkpoint_path: pathlib.Path):
     print("Loading custom text model")
     text_model = AutoModelForCausalLM.from_pretrained(checkpoint_path / "text_model", device_map=0,
                                                       torch_dtype=torch.float16)
@@ -64,7 +64,7 @@ def load_llm(checkpoint_path: pathlib.Path):
     return text_model
 
 
-def load_image_adapter(checkpoint_path: pathlib.Path, clip_model, text_model):
+def _load_image_adapter(checkpoint_path: pathlib.Path, clip_model, text_model):
     print("Loading image adapter")
     image_adapter = ImageAdapter(clip_model.config.hidden_size, text_model.config.hidden_size, False, False, 38, False)
     image_adapter.load_state_dict(

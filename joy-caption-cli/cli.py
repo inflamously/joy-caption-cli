@@ -10,6 +10,8 @@ from captions.clip.folder import caption_folder as clip_caption_folder
 
 from config.load import load_config
 from state import APP_STATE
+from initialization import setup_config
+
 
 # File: cli.py
 # Author: nflamously
@@ -36,12 +38,7 @@ def clip_caption():
 
 
 if __name__ == '__main__':
-    config = load_config('config/config.json')
-
-    # Read Config
-    APP_STATE["checkpoint_path"] = pathlib.Path(config['checkpoint_path'])
-    APP_STATE["caption_map"] = config['captions']["map"]
-    APP_STATE["clip_model_name"] = config['clip_model']
+    setup_config()
 
     # Joy Caption
     caption.add_command(joy_caption_file)
