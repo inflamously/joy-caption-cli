@@ -1,12 +1,13 @@
 import torch
 from torch import nn
 
+
 # File: image_adapter.py
 # Author: fancyfeast
 # Modified by: nflamously
 # Original License: Apache License 2.0 / unknown
 # Changes:
-# * None
+# * optimize to use float16 instead
 # This code was originally authored by fancyfeast. All modifications are documented and follow the terms of the original license.
 
 class ImageAdapter(nn.Module):
@@ -18,14 +19,15 @@ class ImageAdapter(nn.Module):
         if self.deep_extract:
             input_features = input_features * 5
 
-        self.linear1 = nn.Linear(input_features, output_features)
+        self.linear1 = nn.Linear(input_features, output_features, dtype=torch.float16)
         self.activation = nn.GELU()
-        self.linear2 = nn.Linear(output_features, output_features)
-        self.ln1 = nn.Identity() if not ln1 else nn.LayerNorm(input_features)
-        self.pos_emb = None if not pos_emb else nn.Parameter(torch.zeros(num_image_tokens, input_features))
+        self.linear2 = nn.Linear(output_features, output_features, dtype=torch.float16)
+        self.ln1 = nn.Identity() if not ln1 else nn.LayerNorm(input_features, dtype=torch.float16)
+        self.pos_emb = None if not pos_emb else nn.Parameter(
+            torch.zeros(num_image_tokens, input_features, dtype=torch.float16))
 
         # Other tokens (<|image_start|>, <|image_end|>, <|eot_id|>)
-        self.other_tokens = nn.Embedding(3, output_features)
+        self.other_tokens = nn.Embedding(3, output_features, dtype=torch.float16)
         self.other_tokens.weight.data.normal_(mean=0.0, std=0.02)  # Matches HF's implementation of llama3
 
     def forward(self, vision_outputs: torch.Tensor):

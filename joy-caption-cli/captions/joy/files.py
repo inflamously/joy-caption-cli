@@ -9,6 +9,7 @@ from tqdm import tqdm
 from prompt_image import caption_images
 from state import APP_STATE
 
+
 # File: files.py
 # Author: nflamously
 # Original License: Apache License 2.0
@@ -31,14 +32,13 @@ def process_caption_files(
     if extra_options is None:
         extra_options = []
 
-    if any(map(lambda f: not os.path.exists(f), files)):
+    if any(map(lambda x: not os.path.exists(x), files)):
         raise FileNotFoundError
 
     if not APP_STATE["caption_map"]:
         raise Exception("config.json -> captions.map cannot be undefined!")
 
-    images = transform_images(
-        files)  #
+    images = transform_images(files)
     options = extra_options if extra_options else []
     image_caption_list = caption_images(
         APP_STATE["tokenizer"], APP_STATE["text_model"], APP_STATE["clip_model"], APP_STATE["image_adapter"],

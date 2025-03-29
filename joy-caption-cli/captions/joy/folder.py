@@ -6,6 +6,7 @@ from captions.joy.files import process_caption_files
 from model import load_models
 from state import APP_STATE
 
+
 # File: folder.py
 # Author: nflamously
 # Original License: Apache License 2.0

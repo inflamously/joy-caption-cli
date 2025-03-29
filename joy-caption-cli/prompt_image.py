@@ -9,6 +9,7 @@ from transformers import PreTrainedTokenizerFast
 
 from captions.utils import break_list_into_chunks
 
+
 # File: prompt_image.py
 # Author: fancyfeast
 # Modified by: nflamously
@@ -70,7 +71,7 @@ def process_images(images: List[PIL.Image.Image]) -> List[torch.Tensor]:
         target_image = source_image.resize((384, 384),
                                            PIL.Image.LANCZOS) if source_image.width != 384 or source_image.height != 384 else source_image
         return transforms.functional.normalize(transforms.functional.pil_to_tensor(target_image).unsqueeze(
-            0) / 255.0, [0.5], [0.5]).to('cuda')
+            0) / 255.0, [0.5], [0.5]).to(dtype=torch.float16, device='cuda')
 
     return [process_image(image) for image in tqdm.tqdm(images, desc="Tensoring images")]
 
@@ -112,20 +113,23 @@ def calculate_preamble_length(tokenizer, convo_tokens, prompt_tokens):
 def generate_captions(
         text_model, clip_model, image_adapter, tokenizer: PreTrainedTokenizerFast,
         images: List[PIL.Image.Image], convo_tokens, preamble_len, batch_size: int = 1):
-    if len(images) <= 0: return
+    if not images or len(images) <= 0: return
 
-    convo_embeds = text_model.model.embed_tokens(convo_tokens.unsqueeze(0).to('cuda'))
+    with torch.no_grad():
+        convo_embeds = text_model.model.embed_tokens(convo_tokens.unsqueeze(0).to('cuda'))
+
     resulting_captions: List[str] = []
     image_chunks = break_list_into_chunks(images, batch_size) if batch_size > 1 else images
 
     for chunk in tqdm.tqdm(image_chunks, desc="Processing images"):
-        pixel_values = torch.stack(process_images(chunk if batch_size > 1 else [chunk])).squeeze(1)  # torch.stack(process_images(images)).squeeze() if len(images) > 1 else process_images(images)
+        pixel_values = torch.stack(process_images(chunk if batch_size > 1 else [chunk])).squeeze(
+            1)  # torch.stack(process_images(images)).squeeze() if len(images) > 1 else process_images(images)
 
-        # This results in Batch x Image Tokens x Features
-        vision_outputs = clip_model(pixel_values=pixel_values, output_hidden_states=True)
-        embedded_images = image_adapter(vision_outputs.hidden_states).to('cuda')
-        del vision_outputs
-
+        with torch.no_grad():
+            # This results in Batch x Image Tokens x Features
+            vision_outputs = clip_model(pixel_values=pixel_values, output_hidden_states=True)
+            embedded_images = image_adapter(vision_outputs.hidden_states)
+            del vision_outputs
 
         embeds = []
         tokens = []
@@ -145,6 +149,7 @@ def generate_captions(
             ], dim=1).to('cuda'))
 
         del embedded_images
+
         torch.cuda.empty_cache()
 
         # We take first because, embeds and tokens all shouuld be equal dimensions
@@ -155,21 +160,22 @@ def generate_captions(
         # for token in tokens:
         #     print(f"Input to model: {repr(tokenizer.decode(token[0]))}")
 
-        generate_ids = text_model.generate(
-            torch.stack(tokens).squeeze() if len(tokens) > 1 else torch.stack(tokens).squeeze(0),
-            inputs_embeds=torch.stack(embeds).squeeze() if len(embeds) > 1 else torch.stack(embeds).squeeze(0),
-            attention_mask=attention_mask,
-            max_new_tokens=300,
-            do_sample=True,
-            suppress_tokens=None)
-        # Uses the default which is temp=0.6, top_p=0.9
+        with torch.no_grad():
+            generate_ids = text_model.generate(
+                torch.stack(tokens).squeeze() if len(tokens) > 1 else torch.stack(tokens).squeeze(0),
+                inputs_embeds=torch.stack(embeds).squeeze() if len(embeds) > 1 else torch.stack(embeds).squeeze(0),
+                attention_mask=attention_mask,
+                max_new_tokens=300,
+                do_sample=True,
+                suppress_tokens=None)
+            # Uses the default which is temp=0.6, top_p=0.9
 
         # Skip prompting text using [:, tokens[0].shape[1]]
         trim_generate_ids = torch.stack(
             [generate_ids[n:n + 1, tokens[n].shape[1]:] for n in range(0, len(generate_ids))]).squeeze(1)
         batch_captions: List[str] = tokenizer.batch_decode(trim_generate_ids, skip_special_tokens=True,
                                                            clean_up_tokenization_spaces=False)
-        resulting_captions = resulting_captions + batch_captions
+        resulting_captions.extend(batch_captions)
 
         del embeds, tokens
         torch.cuda.empty_cache()

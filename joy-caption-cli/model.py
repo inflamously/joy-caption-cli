@@ -2,7 +2,8 @@ import os.path
 import pathlib
 import torch
 from peft import PeftModel
-from transformers import AutoModel, AutoTokenizer, PreTrainedTokenizer, PreTrainedTokenizerFast, LlamaForCausalLM, BitsAndBytesConfig
+from transformers import AutoModel, AutoTokenizer, PreTrainedTokenizer, PreTrainedTokenizerFast, LlamaForCausalLM, \
+    BitsAndBytesConfig
 from image_adapter import ImageAdapter
 from state import APP_STATE
 
@@ -27,7 +28,7 @@ def load_models(clip_model_name: str, checkpoint_path: pathlib.Path):
 
 def _load_clip_model(clip_path: str):
     print("Loading CLIP")
-    clip_model = AutoModel.from_pretrained(clip_path)
+    clip_model = AutoModel.from_pretrained(clip_path, torch_dtype=torch.float16).to('cuda')
     clip_model = clip_model.vision_model
     return clip_model
 
@@ -38,14 +39,12 @@ def _load_vision_model(checkpoint_path: pathlib.Path, clip_model):
     if not os.path.exists(clip_model_path):
         raise Exception("Failed to load CLIP model, path ${} does not exist.".format(clip_model_path))
 
-    checkpoint = torch.load(checkpoint_path / "clip_model.pt", map_location='cpu', weights_only=True)
+    checkpoint = torch.load(checkpoint_path / "clip_model.pt", map_location='cuda', weights_only=True)
     checkpoint = {k.replace("_orig_mod.module.", ""): v for k, v in checkpoint.items()}
     clip_model.load_state_dict(checkpoint)
     del checkpoint
-
     clip_model.eval()
     clip_model.requires_grad_(False)
-    clip_model.to("cuda")
 
 
 def _load_tokenizer(checkpoint_path: pathlib.Path):
@@ -63,8 +62,8 @@ def _load_llm(checkpoint_path: pathlib.Path):
     # Load the base model (adjust device_map, load_in_8bit, torch_dtype as needed for your hardware)
     base_model = LlamaForCausalLM.from_pretrained(
         "unsloth/Meta-Llama-3.1-8B-Instruct",
-        torch_dtype=torch.float16,  # Or bfloat16 if supported and preferred
-        device_map="auto",  # Or specific device "cuda:0"
+        torch_dtype=torch.float16,
+        device_map="auto",
         quantization_config=BitsAndBytesConfig(load_in_8bit=True)
     )
 
@@ -73,7 +72,7 @@ def _load_llm(checkpoint_path: pathlib.Path):
     model = PeftModel.from_pretrained(
         base_model,
         checkpoint_path / "text_model",
-        torch_dtype=torch.float16, # Usually inherits from base model
+        # torch_dtype=torch.float16,  # Usually inherits from base model
         device_map="auto"
     )
 
@@ -83,9 +82,8 @@ def _load_llm(checkpoint_path: pathlib.Path):
 
 def _load_image_adapter(checkpoint_path: pathlib.Path, clip_model, text_model):
     print("Loading image adapter")
-    image_adapter = ImageAdapter(clip_model.config.hidden_size, text_model.config.hidden_size, False, False, 38, False)
+    image_adapter = ImageAdapter(clip_model.config.hidden_size, text_model.config.hidden_size, False, False, 38, False).to('cuda')
     image_adapter.load_state_dict(
         torch.load(checkpoint_path / "image_adapter.pt", map_location="cpu", weights_only=True))
     image_adapter.eval()
-    image_adapter.to("cuda")
     return image_adapter
