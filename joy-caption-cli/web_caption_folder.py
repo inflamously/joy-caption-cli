@@ -16,7 +16,7 @@ def generate_captions(
         custom_prompt,
         batch_size
 ):
-    process_caption_folder(folder, "", "", type, caption_length, extra_instruction, custom_prompt, batch_size)
+    process_caption_folder(folder, "text", "", type, caption_length, extra_instruction, custom_prompt, batch_size)
 
 
 setup_config()

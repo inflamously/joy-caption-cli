@@ -1,5 +1,3 @@
-import pathlib
-
 import click
 
 from captions.joy.file import caption_file as joy_caption_file
@@ -7,9 +5,6 @@ from captions.joy.folder import caption_folder as joy_caption_folder
 from captions.joy.profiling import caption_profile_image as joy_caption_profile_image
 
 from captions.clip.folder import caption_folder as clip_caption_folder
-
-from config.load import load_config
-from state import APP_STATE
 from initialization import setup_config
 
 

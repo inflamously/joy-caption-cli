@@ -2,9 +2,9 @@ from typing import List
 
 import click
 
-from ...captions.joy.files import process_caption_files
-from ...model import load_models
-from ...state import APP_STATE
+from captions.joy.files import process_caption_files
+from model import load_models
+from state import APP_STATE
 
 # File: file.py
 # Author: nflamously

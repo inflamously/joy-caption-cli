@@ -19,4 +19,6 @@ Check out the configuration reference at https://huggingface.co/docs/hub/spaces-
 This uses the following huggingface repository [fancyfeast/joy-caption-alpha-two](https://huggingface.co/spaces/fancyfeast/joy-caption-alpha-two) and just extends it with a cli tool for local usage or on a server.
 All model credits go to their respective owners aswell as fancyfeast for the finetune.
 
+---
 
+When downloading joy-caption-model, you must rename "adapter-config" && "adapter-model" to "config" && "model.safetensors" or else the llm cannot be properly loaded by the transformers module.
