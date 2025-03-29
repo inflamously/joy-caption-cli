@@ -6,7 +6,7 @@ import os
 
 def query_images(path) -> list[str | bytes]:
     images = []
-    image_extensions = ['.jpg', '.jpeg', '.png']
+    image_extensions = ['.jpg', '.jpeg', '.png', '.webp']
 
     # Recurse all images and their paths.
     for root, dirs, files in os.walk(path):
