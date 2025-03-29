@@ -3,7 +3,7 @@ import pathlib
 import torch
 from peft import PeftModel
 from transformers import AutoModel, AutoTokenizer, PreTrainedTokenizer, PreTrainedTokenizerFast, \
-    AutoModelForCausalLM, LlamaForCausalLM
+    AutoModelForCausalLM, LlamaForCausalLM, BitsAndBytesConfig
 from image_adapter import ImageAdapter
 from state import APP_STATE
 
@@ -66,7 +66,7 @@ def _load_llm(checkpoint_path: pathlib.Path):
         "unsloth/Meta-Llama-3.1-8B-Instruct",
         torch_dtype=torch.float16,  # Or bfloat16 if supported and preferred
         device_map="auto",  # Or specific device "cuda:0"
-        load_in_8bit=True,  # Optional: If you need quantization
+        quantization_config=BitsAndBytesConfig(load_in_8bit=True)
     )
 
     print(f"Loading PEFT adapter from")
