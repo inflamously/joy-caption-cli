@@ -14,6 +14,7 @@ class AppState(TypedDict):
     image_adapter: Any
     caption_map: Any
     checkpoint_path: pathlib.Path | None
+    model_type: str
 
 
 APP_STATE: AppState = {
@@ -23,5 +24,6 @@ APP_STATE: AppState = {
     "text_model": None,
     "image_adapter": None,
     "caption_map": None,
-    "checkpoint_path": None
+    "checkpoint_path": None,
+    "model_type": ""
 }

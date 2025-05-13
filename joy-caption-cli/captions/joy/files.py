@@ -41,7 +41,8 @@ def process_caption_files(
 
     images = transform_images(files)
     options = extra_options if extra_options else []
-    image_caption_list = caption_images(
+
+    image_caption_list = process_captions(
         APP_STATE["tokenizer"], APP_STATE["text_model"], APP_STATE["clip_model"], APP_STATE["image_adapter"],
         images, caption_type, caption_length, options, name, custom_prompt, APP_STATE["caption_map"], batch_size)
 
@@ -57,3 +58,14 @@ def process_caption_files(
                 caption: str = image_caption_list[file_idx]["joycaption"]
                 with codecs.open(files[file_idx][:-4] + '.txt', 'w', 'utf-8') as f:
                     f.write(caption)
+
+
+def process_captions(tokenizer, text_model, clip_model, image_adapter, images, caption_type, caption_length, options,
+                     name, custom_prompt, caption_map, batch_size: int = 1):
+    captions = []
+
+    captions = caption_images(
+        tokenizer, text_model, clip_model, image_adapter, images, caption_type, caption_length, options, name,
+        custom_prompt, caption_map, batch_size)
+
+    return captions

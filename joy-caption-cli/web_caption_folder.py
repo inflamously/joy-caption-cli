@@ -8,6 +8,7 @@ from initialization import setup_config
 from model import load_models
 from state import APP_STATE
 
+
 # File: web_caption_folder.py
 # Author: nflamously
 # Original License: Apache License 2.0
@@ -23,9 +24,6 @@ def generate_captions(
     process_caption_folder(folder, "text", "", type, caption_length, extra_instruction, custom_prompt, batch_size)
 
 
-setup_config()
-load_models(APP_STATE['clip_model_name'], APP_STATE['checkpoint_path'])
-
 if not "PYTHONUNBUFFERED" in os.environ:
     raise RuntimeError("Must start with unbuffered for easygui to work.")
 
@@ -35,13 +33,22 @@ def select_folder():
     return folder
 
 
+def load_model(model_type: str):
+    setup_config(model_type)
+    load_models(APP_STATE['clip_model_name'], APP_STATE['checkpoint_path'], APP_STATE['model_type'])
+
+
 with open("./config/config.json", "r") as f:
     config = json.load(f)
 
 caption_types = config["captions"]["map"].keys()
 
 with gr.Blocks(title="Image Caption Generator") as app:
-    with gr.Row() as row:
+    gr.Markdown("## Image Caption Generator")
+    with gr.Column():
+        model_type = gr.Radio(["alpha", "beta"], value="alpha")
+        load_model_type = gr.Button()
+        load_model_type.click(fn=load_model, inputs=model_type, outputs=[])
         folder_selection = gr.Textbox(value=r"", label="Caption Folder")
         folder = gr.Button("Select Folder")
         folder.click(fn=select_folder, outputs=folder_selection)
