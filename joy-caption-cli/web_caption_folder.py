@@ -35,32 +35,38 @@ def select_folder():
 def load_model(model_type: str):
     setup_config(model_type)
     model_selection.load_model()
+    return list(config["model"][model_type]["caption_types"].keys())
 
 
-with open("./config/config.json", "r") as f:
+with open("./config/config.json", "r", encoding="utf-8") as f:
     config = json.load(f)
-
-caption_types = config["captions"]["map"].keys()
 
 with gr.Blocks(title="Image Caption Generator") as app:
     gr.Markdown("## Image Caption Generator")
+
     with gr.Column():
         model_type = gr.Radio(["alpha", "beta"], value="alpha")
-        load_model_type = gr.Button()
-        load_model_type.click(fn=load_model, inputs=model_type, outputs=[])
+        btn_load_model_type = gr.Button("Load Model")
+
+    with gr.Column():
         folder_selection = gr.Textbox(value=r"", label="Caption Folder")
-        folder = gr.Button("Select Folder")
-        folder.click(fn=select_folder, outputs=folder_selection)
-    caption_type = gr.Radio(choices=caption_types, value="Training Prompt", label="Caption Type")
-    caption_length = gr.Radio(choices=["short", "medium", "long"], value="short", label="Caption Length")
-    extra_instruction = gr.Textbox(value="Describe the quality of the image as details as possible.",
-                                   label="Extra Instruction")
-    custom_prompt = gr.Textbox(value="", label="Custom Prompt")
-    batch_size = gr.Slider(minimum=1, maximum=40, step=1, value=2, label="Batch Size")
-    generator = gr.Button("Generate Captions")
-    generator.click(fn=generate_captions,
-                    inputs=[folder_selection, caption_type, caption_length, extra_instruction,
-                            custom_prompt,
-                            batch_size])
+        btn_select_folder = gr.Button("Select Folder")
+
+    with gr.Column():
+        caption_type = gr.Radio(choices=[], value="Training Prompt", label="Caption Type")
+        caption_length = gr.Radio(choices=["short", "medium", "long"], value="short", label="Caption Length",
+                                  )
+        extra_instruction = gr.Textbox(value="Describe the quality of the image as details as possible.",
+                                       label="Extra Instruction")
+        custom_prompt = gr.Textbox(value="", label="Custom Prompt")
+        batch_size = gr.Slider(minimum=1, maximum=40, step=1, value=2, label="Batch Size")
+        btn_generator = gr.Button("Generate Captions")
+        btn_generator.click(fn=generate_captions,
+                            inputs=[folder_selection, caption_type, caption_length, extra_instruction,
+                                    custom_prompt,
+                                    batch_size])
+
+    btn_load_model_type.click(fn=load_model, inputs=model_type, outputs=caption_type)
+    btn_select_folder.click(fn=select_folder, outputs=folder_selection)
 
 app.launch()

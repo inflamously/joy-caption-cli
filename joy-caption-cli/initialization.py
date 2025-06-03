@@ -11,14 +11,13 @@ from state import APP_STATE
 def setup_config(model_type: str = "alpha"):
     APP_STATE["model_type"] = model_type
 
-    if model_type == "alpha":
-        config = load_config('config/config.json')
+    app_config = load_config('config/config.json')["model"][model_type]
+    APP_STATE["caption_map"] = app_config['caption_types']
 
-        # Read Config
-        APP_STATE["checkpoint_path"] = pathlib.Path(config['checkpoint_path'])
-        APP_STATE["caption_map"] = config['captions']["map"]
-        APP_STATE["clip_model_name"] = config['clip_model']
+    if model_type == "alpha":
+        APP_STATE["checkpoint_path"] = pathlib.Path(app_config['checkpoint_path'])
+        APP_STATE["clip_model_name"] = app_config['clip_model']
     elif model_type == "beta":
-        APP_STATE["text_model"] = "fancyfeast/llama-joycaption-beta-one-hf-llava"
+        APP_STATE["text_model"] = app_config["checkpoint_path"]
     else:
         raise Exception(f"model_type {model_type} is not supported, available: [alpha, beta]")

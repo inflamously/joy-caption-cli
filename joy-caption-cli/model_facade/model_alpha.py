@@ -14,11 +14,10 @@ from image_adapter import ImageAdapter
 # Changes:
 # * split import and loaders into own functions to be used. Extends app with a state class.
 # * Use proper loading of LORA and using PEFT and propery MODEL to load weights in and getting ready to action
-# This code was originally authored by fancyfeast. All modifications are documented and follow the terms of the original license.
 
 
 def load_clip_model(clip_path: str):
-    print("Loading CLIP")
+    print("Loading alpha clip model")
     clip_model = AutoModel.from_pretrained(clip_path, torch_dtype=torch.float16).to('cuda')
     clip_model = clip_model.vision_model
     return clip_model

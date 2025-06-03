@@ -9,7 +9,6 @@ import clip_interrogator
 
 from captions.utils import break_list_into_chunks
 
-
 # File: folder.py
 # Author: nflamously
 # Original License: Apache License 2.0
@@ -43,5 +42,5 @@ def _caption_folder(path: str, prefix: str, output: str, batch_size: int):
     for target_path, caption in captions:
         filepath, fileextension = os.path.splitext(target_path)
         target_text_file = target_path[:-len(fileextension)] + ".txt"
-        with open(target_text_file, "w") as f:
+        with open(target_text_file, "w", encoding="utf-8") as f:
             f.write(caption)

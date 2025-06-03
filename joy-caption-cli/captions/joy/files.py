@@ -8,7 +8,6 @@ import PIL
 from tqdm import tqdm
 
 from model_facade import model_beta
-from model_facade.model_beta import inference
 from prompt_image import caption_images
 from state import APP_STATE
 
@@ -64,27 +63,23 @@ def process_caption_files(
 
 def process_captions(tokenizer, text_model, clip_model, image_adapter, images, caption_type, caption_length, options,
                      name, custom_prompt, caption_map, batch_size: int = 1):
-
     model_type = APP_STATE["model_type"]
-    captions = []
 
     if model_type == "alpha":
-        captions = caption_images(
+        return caption_images(
             tokenizer, text_model, clip_model, image_adapter, images, caption_type, caption_length, options, name,
             custom_prompt, caption_map, batch_size)
-    if model_type == "beta":
-        for image in images:
-            captions.append(
-                model_beta.inference(
-                    APP_STATE["processor"],
-                    APP_STATE["text_model"],
-                    image,
-                    custom_prompt,
-                    temperature=0.6,
-                    top_p=0.9,
-                    max_new_tokens=512,
-                    log_prompt=True
-                )
-            )
-
-    return captions
+    elif model_type == "beta":
+        return model_beta.inference(
+            APP_STATE["processor"],
+            APP_STATE["text_model"],
+            images,
+            custom_prompt,
+            temperature=0.6,
+            top_p=0.9,
+            max_new_tokens=512,
+            show_prompt=True,
+            batch_size=batch_size
+        )
+    else:
+        raise Exception(f"unknown model type {model_type}")
