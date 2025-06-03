@@ -20,3 +20,5 @@ def setup_config(model_type: str = "alpha"):
         APP_STATE["clip_model_name"] = config['clip_model']
     elif model_type == "beta":
         APP_STATE["text_model"] = "fancyfeast/llama-joycaption-beta-one-hf-llava"
+    else:
+        raise Exception(f"model_type {model_type} is not supported, available: [alpha, beta]")

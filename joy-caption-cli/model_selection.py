@@ -1,14 +1,14 @@
 # Setup Models
-import pathlib
 from state import APP_STATE
-from model_facade.model_alpha import load_vision_model, load_clip_model, load_llm, load_tokenizer, load_image_adapter
+from model_facade import model_alpha, model_beta
 import torch
+
 
 # File: model_selection.py
 # Author: nflamously
 # Original License: Apache License 2.0
 
-def load_models(clip_model_name: str, checkpoint_path: pathlib.Path, model_type: str):
+def load_model():
     torch.clear_autocast_cache()
 
     if APP_STATE["clip_model"]:
@@ -24,12 +24,20 @@ def load_models(clip_model_name: str, checkpoint_path: pathlib.Path, model_type:
         del APP_STATE["image_adapter"]
         APP_STATE["image_adapter"] = None
 
+    model_type = APP_STATE['model_type']
+
     if model_type == "alpha":
-        APP_STATE["clip_model"] = load_clip_model(clip_model_name)
-        load_vision_model(checkpoint_path, APP_STATE["clip_model"])
-        APP_STATE["tokenizer"] = load_tokenizer(checkpoint_path)
-        APP_STATE["text_model"] = load_llm(checkpoint_path)
-        APP_STATE["image_adapter"] = load_image_adapter(checkpoint_path, APP_STATE["clip_model"],
-                                                        APP_STATE["text_model"])
+        checkpoint_path = APP_STATE['checkpoint_path']
+        APP_STATE["clip_model"] = model_alpha.load_clip_model(APP_STATE['clip_model_name'])
+        model_alpha.load_vision_model(checkpoint_path, APP_STATE["clip_model"])
+        APP_STATE["tokenizer"] = model_alpha.load_tokenizer(checkpoint_path)
+        APP_STATE["text_model"] = model_alpha.load_llm(checkpoint_path)
+        APP_STATE["image_adapter"] = model_alpha.load_image_adapter(checkpoint_path, APP_STATE["clip_model"],
+                                                                    APP_STATE["text_model"])
     elif model_type == "beta":
-        APP_STATE["text_model"] = load_llm("fancyfeast/llama-joycaption-beta-one-hf-llava")
+        [processor, model] = model_beta.load_llava("fancyfeast/llama-joycaption-beta-one-hf-llava")
+        APP_STATE["text_model"] = model
+        APP_STATE["processor"] = processor
+
+
+def supported_models(): return ['alpha', 'beta']

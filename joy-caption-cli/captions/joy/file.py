@@ -3,7 +3,8 @@ from typing import List
 import click
 
 from captions.joy.files import process_caption_files
-from model_selection import load_models
+from initialization import setup_config
+from model_selection import load_model, supported_models
 from state import APP_STATE
 
 # File: file.py
@@ -12,6 +13,7 @@ from state import APP_STATE
 
 @click.command('file')
 @click.argument('file')
+@click.argument('model_type', type=click.Choice(supported_models()))
 @click.option('--output', type=str)
 @click.option('--name', default='')
 @click.option('--caption_type', default='Descriptive')
@@ -19,9 +21,11 @@ from state import APP_STATE
 @click.option('--extra_options', '-ex', multiple=True)
 @click.option('--custom_prompt', default='')
 def caption_file(
+        model_type: str,
         file: str, output: str, caption_type: str, caption_length: str,
         name: str, extra_options: List[str], custom_prompt: str):
-    load_models(APP_STATE['clip_model_name'], APP_STATE['checkpoint_path'], APP_STATE['model_type'])
+    setup_config(model_type)
+    load_model()
     _process_caption_file(file, output, caption_type, caption_length, name, extra_options, custom_prompt)
 
 

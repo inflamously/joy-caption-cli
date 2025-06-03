@@ -3,10 +3,9 @@ import gradio as gr
 import os
 import json
 
+import model_selection
 from captions.joy.folder import process_caption_folder
 from initialization import setup_config
-from model import load_models
-from state import APP_STATE
 
 
 # File: web_caption_folder.py
@@ -35,7 +34,7 @@ def select_folder():
 
 def load_model(model_type: str):
     setup_config(model_type)
-    load_models(APP_STATE['clip_model_name'], APP_STATE['checkpoint_path'], APP_STATE['model_type'])
+    model_selection.load_model()
 
 
 with open("./config/config.json", "r") as f:
@@ -60,7 +59,8 @@ with gr.Blocks(title="Image Caption Generator") as app:
     batch_size = gr.Slider(minimum=1, maximum=40, step=1, value=2, label="Batch Size")
     generator = gr.Button("Generate Captions")
     generator.click(fn=generate_captions,
-                    inputs=[folder_selection, caption_type, caption_length, extra_instruction, custom_prompt,
+                    inputs=[folder_selection, caption_type, caption_length, extra_instruction,
+                            custom_prompt,
                             batch_size])
 
 app.launch()
