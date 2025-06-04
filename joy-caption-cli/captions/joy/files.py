@@ -77,7 +77,7 @@ def process_captions(tokenizer, text_model, clip_model, image_adapter, images, c
             custom_prompt,
             temperature=0.6,
             top_p=0.9,
-            max_new_tokens=512,
+            max_new_tokens=256,
             show_prompt=True,
             batch_size=batch_size
         )

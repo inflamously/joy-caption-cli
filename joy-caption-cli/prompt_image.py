@@ -71,7 +71,7 @@ def process_images(images: List[PIL.Image.Image]) -> List[torch.Tensor]:
         target_image = source_image.resize((384, 384),
                                            PIL.Image.LANCZOS) if source_image.width != 384 or source_image.height != 384 else source_image
         return transforms.functional.normalize(transforms.functional.pil_to_tensor(target_image).unsqueeze(
-            0) / 255.0, [0.5], [0.5]).to(dtype=torch.float16, device='cuda')
+            0) / 255.0, mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5]).to(dtype=torch.float16, device='cuda')
 
     return [process_image(image) for image in tqdm.tqdm(images, desc="Tensoring images")]
 

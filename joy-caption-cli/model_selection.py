@@ -35,7 +35,7 @@ def load_model():
         APP_STATE["image_adapter"] = model_alpha.load_image_adapter(checkpoint_path, APP_STATE["clip_model"],
                                                                     APP_STATE["text_model"])
     elif model_type == "beta":
-        [processor, model] = model_beta.load_llava("fancyfeast/llama-joycaption-beta-one-hf-llava")
+        [processor, model] = model_beta.load_llava(APP_STATE['checkpoint_path'])
         APP_STATE["text_model"] = model
         APP_STATE["processor"] = processor
 

@@ -3,8 +3,7 @@ import pathlib
 import torch
 import tqdm
 from PIL import Image
-from transformers import AutoProcessor, LlavaForConditionalGeneration, TextIteratorStreamer
-
+from transformers import AutoProcessor, LlavaForConditionalGeneration, AutoModel, LlamaForCausalLM, BitsAndBytesConfig
 from captions.utils import break_list_into_chunks
 
 
@@ -34,7 +33,7 @@ def inference(
         show_prompt: bool, batch_size: int):
     torch.cuda.empty_cache()
 
-    prompts = []
+    prompts_data = []
 
     if show_prompt: print(f"{original_prompt}")
 
@@ -63,7 +62,7 @@ def inference(
 
         # Process the inputs
         inputs = processor(text=convos, images=chunk, return_tensors="pt").to('cuda')
-        inputs['pixel_values'] = inputs['pixel_values'].to(torch.bfloat16)
+        inputs['pixel_values'] = inputs['pixel_values']
 
         generate_ids = model.generate(**inputs,
                                       max_new_tokens=max_new_tokens,
@@ -82,10 +81,10 @@ def inference(
             image_prompt = image_prompt[
                            image_prompt.index(image_prompt_start) + len(image_prompt_start):].strip().replace(
                 "\n", "")
-            prompts.append({
+            prompts_data.append({
                 "image": chunk[idx],
                 "prompt": original_prompt,
                 "joycaption": image_prompt,
             })
 
-    return prompts
+    return prompts_data
