@@ -65,6 +65,12 @@ def process_captions(tokenizer, text_model, clip_model, image_adapter, images, c
                      name, custom_prompt, caption_map, batch_size: int = 1):
     model_type = APP_STATE["model_type"]
 
+    try:
+        # TODO: Define prompt length
+        next_prompt = caption_map[caption_type][0] + custom_prompt
+    except:
+        next_prompt = custom_prompt or ""
+
     if model_type == "alpha":
         return caption_images(
             tokenizer, text_model, clip_model, image_adapter, images, caption_type, caption_length, options, name,
@@ -74,7 +80,7 @@ def process_captions(tokenizer, text_model, clip_model, image_adapter, images, c
             APP_STATE["processor"],
             APP_STATE["text_model"],
             images,
-            custom_prompt,
+            next_prompt,
             temperature=0.6,
             top_p=0.9,
             max_new_tokens=256,

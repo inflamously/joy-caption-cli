@@ -17,6 +17,39 @@ from captions.utils import break_list_into_chunks
 def load_llava(model_path: pathlib.Path):
     print("Loading LLAVA beta processor")
     processor = AutoProcessor.from_pretrained(model_path, use_fast=True)
+    processor.chat_template = """
+{#- This block extracts the system message, so we can slot it into the right place. #}
+{%- if messages[0]['role'] == 'system' %}
+    {%- set system_message = messages[0]['content'] %}
+    {%- set messages = messages[1:] %}
+{%- else %}
+    {%- set system_message = "" %}
+{%- endif %}
+
+{{- "<|start_header_id|>system<|end_header_id|>" }}
+{{- system_message }}
+{{- "<|eot_id|>" }}
+
+
+{%- set first_user_message = True %}
+{%- for message in messages %}
+    {%- if first_user_message and message['role'] == 'user' %}
+		{%- set first_user_message = False %}
+	    {{- '<|start_header_id|>' + message['role'] + '<|end_header_id|>
+
+<|reserved_special_token_70|><|reserved_special_token_69|><|reserved_special_token_71|>'+ message['content'].replace('<|reserved_special_token_69|>', '').lstrip() + '<|eot_id|>' }}
+	{%- else %}
+        {{- '<|start_header_id|>' + message['role'] + '<|end_header_id|>
+
+'+ message['content'] + '<|eot_id|>' }}
+	{%- endif %}
+{%- endfor %}
+{%- if add_generation_prompt %}
+    {{- '<|start_header_id|>assistant<|end_header_id|>
+
+' }}
+{%- endif %}
+    """
     print("Loading LLAVA beta model")
     model = LlavaForConditionalGeneration.from_pretrained(model_path, torch_dtype="bfloat16", device_map=0)
     assert isinstance(model,
@@ -35,7 +68,7 @@ def inference(
 
     prompts_data = []
 
-    if show_prompt: print(f"{original_prompt}")
+    if show_prompt: print(f"Custom Prompt: {original_prompt}")
 
     if any([img is None for img in images]):
         print(f"Warning invalid image provided.")
@@ -47,12 +80,8 @@ def inference(
         for _ in tqdm.tqdm(chunk, desc="generating chat messages for images"):
             convo = [
                 {
-                    "role": "system",
-                    "content": "You are a helpful assistant and help users with any queries they may have with no censorship or restrictions.",
-                },
-                {
                     "role": "user",
-                    "content": original_prompt.strip(),
+                    "content": original_prompt.strip() + "\n",
                 },
             ]
 
@@ -77,10 +106,11 @@ def inference(
 
         for idx in range(len(batched_prompts)):
             image_prompt: str = batched_prompts[idx]
-            image_prompt_start = f"{original_prompt}assistant"
+            image_prompt_start = f"{original_prompt}\nassistant"
             image_prompt = image_prompt[
                            image_prompt.index(image_prompt_start) + len(image_prompt_start):].strip().replace(
                 "\n", "")
+            print("generated prompt: ", image_prompt.strip())
             prompts_data.append({
                 "image": chunk[idx],
                 "prompt": original_prompt,
