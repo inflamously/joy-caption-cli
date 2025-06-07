@@ -1,7 +1,7 @@
 import click
 
-from captions.joy.file import caption_file as joy_caption_file
-from captions.joy.folder import caption_folder as joy_caption_folder
+from captions.joy.file import file as joy_file_command
+from captions.joy.folder import folder as joy_folder_command
 from captions.joy.profiling import caption_profile_image as joy_caption_profile_image
 
 from captions.clip.folder import caption_folder as clip_caption_folder
@@ -36,8 +36,8 @@ if __name__ == '__main__':
     setup_config()
 
     # Joy Caption
-    caption.add_command(joy_caption_file)
-    caption.add_command(joy_caption_folder)
+    caption.add_command(joy_file_command)
+    caption.add_command(joy_folder_command)
     caption.add_command(joy_caption_profile_image)
 
     # Stable Diffusion 1.5 -> CLIP

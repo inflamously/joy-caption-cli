@@ -64,7 +64,6 @@ def inference(
         processor, model, images: list[Image.Image], original_prompt: str,
         temperature: float, top_p: float, max_new_tokens: int,
         show_prompt: bool, batch_size: int):
-    torch.cuda.empty_cache()
 
     prompts_data = []
 
@@ -77,6 +76,7 @@ def inference(
     image_chunks = break_list_into_chunks(images, batch_size) if batch_size > 1 else images
     for chunk in tqdm.tqdm(image_chunks, desc="Processing images in batches"):
         convos = []
+        chunk = chunk if isinstance(chunk, list) else [chunk]
         for _ in tqdm.tqdm(chunk, desc="generating chat messages for images"):
             convo = [
                 {

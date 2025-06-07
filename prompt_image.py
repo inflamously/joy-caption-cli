@@ -4,6 +4,7 @@ import torch
 import torchvision.transforms.functional
 import PIL
 import tqdm
+from PIL.Image import Image
 from torchvision import transforms
 from transformers import PreTrainedTokenizerFast
 
@@ -200,7 +201,7 @@ def caption_image(
 
 def caption_images(
         tokenizer, text_model, clip_model, image_adapter,
-        images: List[PIL.Image.Image],
+        images: List[Image],
         caption_type: str, caption_length: str | int, extra_options: list[str],
         name_input: str, custom_prompt: str, captions: Dict[str, List[str]],
         batch_size: int = 1):

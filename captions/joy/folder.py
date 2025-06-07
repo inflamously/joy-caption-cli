@@ -2,15 +2,22 @@ import os
 import click
 
 from captions.images_query import query_images
+from captions.joy.organize import organize_folder
 from captions.joy.files import process_caption_files
 from initialization import setup_config
 from model_selection import load_model, supported_models
+
 
 # File: folder.py
 # Author: nflamously
 # Original License: Apache License 2.0
 
-@click.command('folder')
+@click.group("folder")
+def folder():
+    pass
+
+
+@click.command("caption")
 @click.argument('path')
 @click.argument('model_type', type=click.Choice(supported_models()))
 @click.option('--output', type=str, default="text")
@@ -39,3 +46,7 @@ def process_caption_folder(
 
     # Process Images
     process_caption_files(images, output, caption_type, caption_length, name, extra_options, custom_prompt, batch_size)
+
+
+folder.add_command(caption_folder)
+folder.add_command(organize_folder)

@@ -43,9 +43,8 @@ def process_caption_files(
     images = transform_images(files)
     options = extra_options if extra_options else []
 
-    image_caption_list = process_captions(
-        APP_STATE["tokenizer"], APP_STATE["text_model"], APP_STATE["clip_model"], APP_STATE["image_adapter"],
-        images, caption_type, caption_length, options, name, custom_prompt, APP_STATE["caption_map"], batch_size)
+    image_caption_list = process_captions(images, caption_type, caption_length, options, name, custom_prompt,
+                                          batch_size)
 
     if not output or output == "json":
         for image_caption in image_caption_list:
@@ -61,30 +60,34 @@ def process_caption_files(
                     f.write(caption)
 
 
-def process_captions(tokenizer, text_model, clip_model, image_adapter, images, caption_type, caption_length, options,
-                     name, custom_prompt, caption_map, batch_size: int = 1):
+def process_captions(images, caption_type="", caption_length="", extra_options=None,
+                     name="", custom_prompt="", batch_size: int = 1, max_new_tokens: int = 256,
+                     temperature: float = 0.6, top_p: float = 0.9, debug_prompt: bool = False):
+    if extra_options is None:
+        extra_options = {}
     model_type = APP_STATE["model_type"]
-
-    try:
-        # TODO: Define prompt length
-        next_prompt = caption_map[caption_type][0] + custom_prompt
-    except:
-        next_prompt = custom_prompt or ""
 
     if model_type == "alpha":
         return caption_images(
-            tokenizer, text_model, clip_model, image_adapter, images, caption_type, caption_length, options, name,
-            custom_prompt, caption_map, batch_size)
+            APP_STATE["tokenizer"], APP_STATE["text_model"], APP_STATE["clip_model"], APP_STATE["image_adapter"],
+            images, caption_type, caption_length, extra_options, name,
+            custom_prompt, APP_STATE["caption_map"], batch_size)
     elif model_type == "beta":
+        try:
+            # TODO: Define prompt length
+            next_prompt = APP_STATE["caption_map"][caption_type][0] + custom_prompt
+        except:
+            next_prompt = custom_prompt or ""
+
         return model_beta.inference(
             APP_STATE["processor"],
             APP_STATE["text_model"],
             images,
             next_prompt,
-            temperature=0.6,
-            top_p=0.9,
-            max_new_tokens=256,
-            show_prompt=True,
+            temperature=temperature,
+            top_p=top_p,
+            max_new_tokens=max_new_tokens,
+            show_prompt=debug_prompt,
             batch_size=batch_size
         )
     else:

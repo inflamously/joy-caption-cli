@@ -7,11 +7,16 @@ from initialization import setup_config
 from model_selection import load_model, supported_models
 from state import APP_STATE
 
+
 # File: file.py
 # Author: nflamously
 # Original License: Apache License 2.0
+@click.group("file")
+def file():
+    pass
 
-@click.command('file')
+
+@click.command('caption')
 @click.argument('file')
 @click.argument('model_type', type=click.Choice(supported_models()))
 @click.option('--output', type=str)
@@ -33,3 +38,6 @@ def _process_caption_file(
         file: str, output: str, caption_type: str = "Descriptive", caption_length: str = "long",
         name: str = "", extra_options=None, custom_prompt: str = ""):
     process_caption_files([file], output, caption_type, caption_length, name, extra_options, custom_prompt)
+
+
+file.add_command(caption_file)
