@@ -22,9 +22,11 @@ def organize_folder(folder: str, model_type: str, batch_size: int, output: str =
     image_paths = query_images(folder)
     images = transform_images(image_paths)
     captions = process_captions(images,
-                                custom_prompt="You are an expert classifier. Analyze the given image and describe it using only one word that reflects its high-level category or theme (e.g., portrait, architecture, nature, style). Your output must be a single word with no additional commentary or explanation.",
+                                custom_prompt="You are an expert classifier. Analyze the given image and describe it using only one word that reflects its high-level category or theme. Your output must be a single word with no additional commentary or explanation.",
                                 batch_size=batch_size,
-                                max_new_tokens=5)
+                                max_new_tokens=5,
+                                temperature=0.1,
+                                top_p=0.9)
 
     if not captions or len(captions) == 0:
         return
