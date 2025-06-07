@@ -2,6 +2,7 @@ import json
 import os
 import codecs
 from concurrent.futures.thread import ThreadPoolExecutor
+from pathlib import Path
 from typing import List
 
 import PIL
@@ -56,7 +57,10 @@ def process_caption_files(
         if output == 'text':
             for file_idx in range(len(files)):
                 caption: str = image_caption_list[file_idx]["joycaption"]
-                with codecs.open(files[file_idx][:-4] + '.txt', 'w', 'utf-8') as f:
+                filepath = Path(files[file_idx])
+                filename = filepath.stem + ".txt"
+                directory_path = filepath.parent
+                with codecs.open(os.path.join(directory_path, filename), 'w', 'utf-8') as f:
                     f.write(caption)
 
 
