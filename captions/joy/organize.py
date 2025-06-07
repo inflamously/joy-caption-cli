@@ -1,8 +1,9 @@
+import json
 import os.path
 import shutil
-from email.policy import default
 
 import click
+import pathvalidate
 
 from captions.images_query import query_images
 from captions.joy.files import process_captions, transform_images
@@ -33,17 +34,25 @@ def organize_folder(folder: str, model_type: str, batch_size: int, output: str =
     if not os.path.exists(target_path):
         os.makedirs(target_path)
 
+    caption_destination_map = {}
+
     for idx in range(len(captions)):
         try:
             caption_map = captions[idx]
-            caption = caption_map["joycaption"].lower()
+            caption = pathvalidate.sanitize_filename(caption_map["joycaption"].lower())
             caption_path = os.path.join(target_path, caption)
             if not os.path.exists(caption_path):
+                # TODO: Add image count?
                 print(f"creating folder '{caption}'")
                 os.makedirs(caption_path)
+                caption_destination_map[caption] = 0
             source_image_path = image_paths[idx]
             source_image_name = os.path.basename(source_image_path)
             target_image_path = os.path.join(caption_path, source_image_name)
             shutil.copyfile(source_image_path, target_image_path)
+            caption_destination_map[caption] += 1
         except Exception as e:
             print(f"Error: {e}")
+
+    with open(os.path.join(target_path, "organize_results.json"), "w") as f:
+        json.dump(caption_destination_map, f)
