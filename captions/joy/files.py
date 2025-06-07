@@ -31,7 +31,7 @@ def transform_images(files: List[str]):
 def process_caption_files(
         files: List[str], output: str,
         caption_type: str = "Descriptive", caption_length: str = "long",
-        name: str = "", extra_options=None, custom_prompt: str = "", batch_size: int = 1):
+        name: str = "", extra_options=None, custom_prompt: str = "", batch_size: int = 1, prompt_prefix: str = ""):
     if extra_options is None:
         extra_options = []
 
@@ -56,7 +56,8 @@ def process_caption_files(
     else:
         if output == 'text':
             for file_idx in range(len(files)):
-                caption: str = image_caption_list[file_idx]["joycaption"]
+                caption_prefix: str =  f"{prompt_prefix}, " if prompt_prefix else ""
+                caption = caption_prefix + image_caption_list[file_idx]["joycaption"]
                 filepath = Path(files[file_idx])
                 filename = filepath.stem + ".txt"
                 directory_path = filepath.parent

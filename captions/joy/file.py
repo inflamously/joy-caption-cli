@@ -25,19 +25,20 @@ def file():
 @click.option('--caption_length', default='long')
 @click.option('--extra_options', '-ex', multiple=True)
 @click.option('--custom_prompt', default='')
+@click.option('--prompt_prefix', default='')
 def caption_file(
         model_type: str,
         file: str, output: str, caption_type: str, caption_length: str,
-        name: str, extra_options: List[str], custom_prompt: str):
+        name: str, extra_options: List[str], custom_prompt: str, prompt_prefix: str):
     setup_config(model_type)
     load_model()
-    _process_caption_file(file, output, caption_type, caption_length, name, extra_options, custom_prompt)
+    _process_caption_file(file, output, caption_type, caption_length, name, extra_options, custom_prompt, prompt_prefix)
 
 
 def _process_caption_file(
-        file: str, output: str, caption_type: str = "Descriptive", caption_length: str = "long",
-        name: str = "", extra_options=None, custom_prompt: str = ""):
-    process_caption_files([file], output, caption_type, caption_length, name, extra_options, custom_prompt)
+        f: str, output: str, caption_type: str = "Descriptive", caption_length: str = "long",
+        name: str = "", extra_options=None, custom_prompt: str = "", prompt_prefix: str = ""):
+    process_caption_files([f], output, caption_type, caption_length, name, extra_options, custom_prompt,1, prompt_prefix)
 
 
 file.add_command(caption_file)

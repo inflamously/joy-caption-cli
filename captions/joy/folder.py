@@ -27,25 +27,27 @@ def folder():
 @click.option('--extra_options', '-ex', multiple=True)
 @click.option('--custom_prompt', default='')
 @click.option('--batch_size', default=1)
+@click.option('--prompt_prefix', default='')
 def caption_folder(
         model_type: str,
         path: str, output: str, name: str, caption_type: str, caption_length: str,
-        extra_options: list[str], custom_prompt: str, batch_size: int):
+        extra_options: list[str], custom_prompt: str, batch_size: int, prompt_prefix: str):
     setup_config(model_type)
     load_model()
-    process_caption_folder(path, output, name, caption_type, caption_length, extra_options, custom_prompt, batch_size)
+    process_caption_folder(path, output, name, caption_type, caption_length, extra_options, custom_prompt, batch_size, prompt_prefix)
 
 
 def process_caption_folder(
         path: str, output: str, name: str, caption_type: str, caption_length: str,
-        extra_options: list[str], custom_prompt: str, batch_size: int = 1):
+        extra_options: list[str], custom_prompt: str, batch_size: int = 1, prompt_prefix: str = ""):
     if not os.path.exists(path):
         raise Exception("Path does not exist")
 
     images = query_images(path)
 
     # Process Images
-    process_caption_files(images, output, caption_type, caption_length, name, extra_options, custom_prompt, batch_size)
+    process_caption_files(images, output, caption_type, caption_length, name, extra_options, custom_prompt, batch_size,
+                          prompt_prefix)
 
 
 folder.add_command(caption_folder)
