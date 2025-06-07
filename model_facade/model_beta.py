@@ -1,4 +1,5 @@
 import pathlib
+from typing import Sequence
 
 import torch
 import tqdm
@@ -63,58 +64,61 @@ def load_llava(model_path: pathlib.Path):
 def inference(
         processor, model, images: list[Image.Image], original_prompt: str,
         temperature: float, top_p: float, max_new_tokens: int,
-        show_prompt: bool, batch_size: int):
+        show_prompt: bool, batch_size: int,
+):
+    if show_prompt:
+        print(f"Custom prompt: {original_prompt}")
 
+    if any(img is None for img in images):
+        raise ValueError("One (or more) images was None")
+
+    user_only_template: str = processor.apply_chat_template(
+        [{"role": "user", "content": original_prompt.strip() + "\n"}],
+        tokenize=False,
+        add_generation_prompt=True,
+    )
+    image_prompt_start = f"{original_prompt}\nassistant"
     prompts_data = []
-
-    if show_prompt: print(f"Custom Prompt: {original_prompt}")
 
     if any([img is None for img in images]):
         print(f"Warning invalid image provided.")
         return ""
 
-    image_chunks = break_list_into_chunks(images, batch_size) if batch_size > 1 else images
-    for chunk in tqdm.tqdm(image_chunks, desc="Processing images in batches"):
-        convos = []
-        chunk = chunk if isinstance(chunk, list) else [chunk]
-        for _ in tqdm.tqdm(chunk, desc="generating chat messages for images"):
-            convo = [
+    for i in tqdm.trange(0, len(images), batch_size, desc="Captioning Images"):
+        chunk: Sequence[Image.Image] = images[i: i + batch_size]
+        convos = [user_only_template] * len(chunk)
+        inputs = processor(
+            text=convos,
+            images=chunk,
+            return_tensors="pt",
+        ).to("cuda")
+
+        with torch.autocast(device_type="cuda", dtype=torch.bfloat16):
+            generate_ids = model.generate(**inputs,
+                                          max_new_tokens=max_new_tokens,
+                                          do_sample=temperature > 0,
+                                          suppress_tokens=None,
+                                          use_cache=True,
+                                          temperature=temperature if temperature > 0 else None,
+                                          top_p=top_p if temperature > 0 else None)
+
+        decoded = processor.batch_decode(
+            generate_ids, skip_special_tokens=True
+        )
+
+        for img, dec in zip(chunk, decoded):
+            try:
+                start = dec.index(image_prompt_start) + len(image_prompt_start)
+                caption = dec[start:].strip().replace("\n", "")
+            except ValueError:  # fallback when pattern not found
+                caption = dec.strip().replace("\n", "")
+
+            prompts_data.append(
                 {
-                    "role": "user",
-                    "content": original_prompt.strip() + "\n",
-                },
-            ]
-
-            convo_string = processor.apply_chat_template(convo, tokenize=False, add_generation_prompt=True)
-            assert isinstance(convo_string, str)
-            convos.append(convo_string)
-
-        # Process the inputs
-        inputs = processor(text=convos, images=chunk, return_tensors="pt").to('cuda')
-        inputs['pixel_values'] = inputs['pixel_values']
-
-        generate_ids = model.generate(**inputs,
-                                      max_new_tokens=max_new_tokens,
-                                      do_sample=True if temperature > 0 else False,
-                                      suppress_tokens=None,
-                                      use_cache=True,
-                                      temperature=temperature if temperature > 0 else None,
-                                      top_k=None,
-                                      top_p=top_p if temperature > 0 else None)
-
-        batched_prompts = processor.batch_decode(generate_ids, skip_special_tokens=True)
-
-        for idx in range(len(batched_prompts)):
-            image_prompt: str = batched_prompts[idx]
-            image_prompt_start = f"{original_prompt}\nassistant"
-            image_prompt = image_prompt[
-                           image_prompt.index(image_prompt_start) + len(image_prompt_start):].strip().replace(
-                "\n", "")
-            print("generated prompt: ", image_prompt.strip())
-            prompts_data.append({
-                "image": chunk[idx],
-                "prompt": original_prompt,
-                "joycaption": image_prompt,
-            })
+                    "image": img,
+                    "prompt": original_prompt,
+                    "joycaption": caption,
+                }
+            )
 
     return prompts_data
