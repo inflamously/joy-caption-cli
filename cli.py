@@ -4,7 +4,7 @@ from captions.joy.file import file as joy_file_command
 from captions.joy.folder import folder as joy_folder_command
 from captions.joy.profiling import caption_profile_image as joy_caption_profile_image
 
-from captions.clip.folder import caption_folder as clip_caption_folder
+from captions.clip.folder import folder as clip_caption_folder
 from initialization import setup_config
 
 
@@ -27,7 +27,7 @@ def caption():
     pass
 
 
-@click.group('clip_caption')
+@click.group('clip')
 def clip_caption():
     pass
 

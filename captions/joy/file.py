@@ -4,7 +4,7 @@ import click
 
 from captions.joy.files import process_caption_files
 from initialization import setup_config
-from model_selection import load_model, supported_models
+from model_selection import load_model, supported_joycaption_models
 from state import APP_STATE
 
 
@@ -18,7 +18,7 @@ def file():
 
 @click.command('caption')
 @click.argument('file')
-@click.argument('model_type', type=click.Choice(supported_models()))
+@click.argument('model_type', type=click.Choice(supported_joycaption_models()))
 @click.option('--output', type=str)
 @click.option('--name', default='')
 @click.option('--caption_type', default='Descriptive')

@@ -53,16 +53,15 @@ def process_caption_files(
                 "prompt": image_caption["prompt"],
                 "joycaption": image_caption["joycaption"]
             }))
-    else:
-        if output == 'text':
-            for file_idx in range(len(files)):
-                caption_prefix: str =  f"{prompt_prefix}, " if prompt_prefix else ""
-                caption = caption_prefix + image_caption_list[file_idx]["joycaption"]
-                filepath = Path(files[file_idx])
-                filename = filepath.stem + ".txt"
-                directory_path = filepath.parent
-                with codecs.open(os.path.join(directory_path, filename), 'w', 'utf-8') as f:
-                    f.write(caption)
+    elif output == 'text':
+        for file_idx in range(len(files)):
+            caption_prefix: str = f"{prompt_prefix}, " if prompt_prefix else ""
+            caption = caption_prefix + image_caption_list[file_idx]["joycaption"]
+            filepath = Path(files[file_idx])
+            filename = filepath.stem + ".txt"
+            directory_path = filepath.parent
+            with codecs.open(os.path.join(directory_path, filename), 'w', 'utf-8') as f:
+                f.write(caption)
 
 
 def process_captions(images, caption_type="", caption_length="", extra_options=None,

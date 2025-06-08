@@ -5,7 +5,7 @@ from captions.images_query import query_images
 from captions.joy.organize import organize_folder
 from captions.joy.files import process_caption_files
 from initialization import setup_config
-from model_selection import load_model, supported_models
+from model_selection import load_model, supported_joycaption_models
 
 
 # File: folder.py
@@ -19,7 +19,7 @@ def folder():
 
 @click.command("caption")
 @click.argument('path')
-@click.argument('model_type', type=click.Choice(supported_models()))
+@click.argument('model_type', type=click.Choice(supported_joycaption_models()))
 @click.option('--output', type=str, default="text")
 @click.option('--name', default='')
 @click.option('--caption_type', default='Descriptive')

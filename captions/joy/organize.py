@@ -8,12 +8,12 @@ import pathvalidate
 from captions.images_query import query_images
 from captions.joy.files import process_captions, transform_images
 from initialization import setup_config
-from model_selection import supported_models, load_model
+from model_selection import supported_joycaption_models, load_model
 
 
 @click.command("organize")
 @click.argument('folder')
-@click.argument('model_type', type=click.Choice(supported_models()))
+@click.argument('model_type', type=click.Choice(supported_joycaption_models()))
 @click.option('--output')
 @click.option('--batch_size', default=1)
 def organize_folder(folder: str, model_type: str, batch_size: int, output: str = ""):

@@ -2,7 +2,7 @@ import click
 
 from captions.joy.file import _process_caption_file
 from initialization import setup_config
-from model_selection import load_model, supported_models
+from model_selection import load_model, supported_joycaption_models
 
 
 # File: profiling.py
@@ -10,7 +10,7 @@ from model_selection import load_model, supported_models
 # Original License: Apache License 2.0
 
 @click.command('profile_image')
-@click.argument('model_type', type=click.Choice(supported_models()))
+@click.argument('model_type', type=click.Choice(supported_joycaption_models()))
 def caption_profile_image(model_type: str):#
     setup_config(model_type)
     load_model()

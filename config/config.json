@@ -100,6 +100,9 @@
           "Write a {length} caption for this image as if it were being used for a social media post."
         ]
       }
+    },
+    "clip": {
+      "checkpoint_path": "Salesforce/blip-image-captioning-large"
     }
   }
 }

@@ -1,6 +1,6 @@
 # Setup Models
 from state import APP_STATE
-from model_facade import model_alpha, model_beta
+from model_facade import model_alpha, model_beta, model_clip
 import torch
 
 
@@ -39,5 +39,11 @@ def load_model():
         APP_STATE["text_model"] = model
         APP_STATE["processor"] = processor
 
+    elif model_type == "clip":
+        [processor, model] = model_clip.load_clip(APP_STATE['checkpoint_path'])
+        APP_STATE["text_model"] = model
+        APP_STATE["processor"] = processor
 
-def supported_models(): return ['alpha', 'beta']
+
+def supported_joycaption_models(): return ['alpha', 'beta']
+def supported_clip_models(): return ['clip']
