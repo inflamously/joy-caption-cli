@@ -5,16 +5,16 @@ import shutil
 import click
 
 from captions.images_query import query_images
-from captions.joy.files import transform_images, process_captions
+from captions.joy.files import process_captions, transform_images
 from initialization import setup_config
-from model_selection import supported_joycaption_models, load_model
+from model_selection import load_model, supported_joycaption_models
 
 
 @click.command("quality")
-@click.argument('folder')
-@click.argument('model_type', type=click.Choice(supported_joycaption_models()))
-@click.option('--output')
-@click.option('--batch_size', default=1)
+@click.argument("folder")
+@click.argument("model_type", type=click.Choice(supported_joycaption_models()))
+@click.option("--output")
+@click.option("--batch_size", default=1)
 def quality_check(folder: str, model_type: str, batch_size: int, output: str = ""):
     setup_config(model_type)
     load_model()
@@ -22,8 +22,9 @@ def quality_check(folder: str, model_type: str, batch_size: int, output: str = "
     images = transform_images(image_paths)
 
     # Using the vision model to assess quality instead of categorizing content
-    quality_assessments = process_captions(images,
-                                           custom_prompt="""
+    quality_assessments = process_captions(
+        images,
+        custom_prompt="""
 Analyze this image's technical quality only. Ignore the subject matter completely and focus exclusively on image fidelity. Classify into exactly ONE of these categories:
 'low_quality': Visibly degraded image with any of these issues: pixelation, heavy compression artifacts, excessive noise/grain, significant blur, or very low resolution.
 'standard_quality': Acceptable image with moderate technical issues: some noise, minor compression artifacts, or slight blur. Not pristine but serviceable.
@@ -31,10 +32,11 @@ Analyze this image's technical quality only. Ignore the subject matter completel
 'premium_quality': Exceptional technical fidelity. Perfect sharpness, no visible noise, no compression artifacts, high resolution.
 Focus solely on technical image quality defects. Output only one category name without explanation.
 """,
-                                           batch_size=batch_size,
-                                           max_new_tokens=10,
-                                           temperature=0,
-                                           top_p=0.9)
+        batch_size=batch_size,
+        max_new_tokens=10,
+        temperature=0,
+        top_p=0.9,
+    )
 
     if not quality_assessments or len(quality_assessments) == 0:
         return
@@ -49,7 +51,7 @@ Focus solely on technical image quality defects. Output only one category name w
         "standard_quality": 0,
         "high_quality": 0,
         "premium_quality": 0,
-        "unclassified": 0
+        "unclassified": 0,
     }
 
     for idx in range(len(quality_assessments)):

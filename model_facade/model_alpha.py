@@ -1,11 +1,18 @@
 import os.path
 import pathlib
+
 import torch
 from peft import PeftModel
-from transformers import AutoModel, AutoTokenizer, PreTrainedTokenizer, PreTrainedTokenizerFast, LlamaForCausalLM, \
-    BitsAndBytesConfig
-from image_adapter import ImageAdapter
+from transformers import (
+    AutoModel,
+    AutoTokenizer,
+    BitsAndBytesConfig,
+    LlamaForCausalLM,
+    PreTrainedTokenizer,
+    PreTrainedTokenizerFast,
+)
 
+from image_adapter import ImageAdapter
 
 # File: model.py
 # Author: fancyfeast
@@ -18,7 +25,9 @@ from image_adapter import ImageAdapter
 
 def load_clip_model(clip_path: str):
     print("Loading alpha clip model")
-    clip_model = AutoModel.from_pretrained(clip_path, torch_dtype=torch.float16).to('cuda')
+    clip_model = AutoModel.from_pretrained(clip_path, torch_dtype=torch.float16).to(
+        "cuda"
+    )
     clip_model = clip_model.vision_model
     return clip_model
 
@@ -27,9 +36,15 @@ def load_vision_model(checkpoint_path: pathlib.Path, clip_model):
     print("Loading custom vision model")
     clip_model_path = checkpoint_path / "clip_model.pt"
     if not os.path.exists(clip_model_path):
-        raise Exception("Failed to load CLIP model, path ${} does not exist.".format(clip_model_path))
+        raise Exception(
+            "Failed to load CLIP model, path ${} does not exist.".format(
+                clip_model_path
+            )
+        )
 
-    checkpoint = torch.load(checkpoint_path / "clip_model.pt", map_location='cuda', weights_only=True)
+    checkpoint = torch.load(
+        checkpoint_path / "clip_model.pt", map_location="cuda", weights_only=True
+    )
     checkpoint = {k.replace("_orig_mod.module.", ""): v for k, v in checkpoint.items()}
     clip_model.load_state_dict(checkpoint)
     del checkpoint
@@ -40,9 +55,12 @@ def load_vision_model(checkpoint_path: pathlib.Path, clip_model):
 def load_tokenizer(checkpoint_path: pathlib.Path):
     # Tokenizer
     print("Loading tokenizer")
-    tokenizer = AutoTokenizer.from_pretrained(checkpoint_path / "text_model", use_fast=True)
-    assert (isinstance(tokenizer, PreTrainedTokenizer) or
-            isinstance(tokenizer, PreTrainedTokenizerFast)), f"Tokenizer is of type {type(tokenizer)}"
+    tokenizer = AutoTokenizer.from_pretrained(
+        checkpoint_path / "text_model", use_fast=True
+    )
+    assert isinstance(tokenizer, PreTrainedTokenizer) or isinstance(
+        tokenizer, PreTrainedTokenizerFast
+    ), f"Tokenizer is of type {type(tokenizer)}"
     return tokenizer
 
 
@@ -54,7 +72,7 @@ def load_llm(checkpoint_path: pathlib.Path):
         "unsloth/Meta-Llama-3.1-8B-Instruct",
         torch_dtype=torch.float16,
         device_map="auto",
-        quantization_config=BitsAndBytesConfig(load_in_8bit=True)
+        quantization_config=BitsAndBytesConfig(load_in_8bit=True),
     )
 
     print(f"Loading PEFT adapter from")
@@ -63,7 +81,7 @@ def load_llm(checkpoint_path: pathlib.Path):
         base_model,
         checkpoint_path / "text_model",
         # torch_dtype=torch.float16,  # Usually inherits from base model
-        device_map="auto"
+        device_map="auto",
     )
 
     # Optional: Merge adapters into the base model if you don't need to switch adapters later
@@ -72,9 +90,18 @@ def load_llm(checkpoint_path: pathlib.Path):
 
 def load_image_adapter(checkpoint_path: pathlib.Path, clip_model, text_model):
     print("Loading image adapter")
-    image_adapter = ImageAdapter(clip_model.config.hidden_size, text_model.config.hidden_size, False, False, 38,
-                                 False).to('cuda')
+    image_adapter = ImageAdapter(
+        clip_model.config.hidden_size,
+        text_model.config.hidden_size,
+        False,
+        False,
+        38,
+        False,
+    ).to("cuda")
     image_adapter.load_state_dict(
-        torch.load(checkpoint_path / "image_adapter.pt", map_location="cpu", weights_only=True))
+        torch.load(
+            checkpoint_path / "image_adapter.pt", map_location="cpu", weights_only=True
+        )
+    )
     image_adapter.eval()
     return image_adapter
