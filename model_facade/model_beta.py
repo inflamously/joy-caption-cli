@@ -4,8 +4,7 @@ from typing import Sequence
 import torch
 import tqdm
 from PIL import Image
-from transformers import AutoProcessor, LlavaForConditionalGeneration, AutoModel, LlamaForCausalLM, BitsAndBytesConfig
-from captions.utils import break_list_into_chunks
+from transformers import AutoProcessor, LlavaForConditionalGeneration
 
 
 # File: model_beta.py
@@ -102,22 +101,19 @@ def inference(
                                           temperature=temperature if temperature > 0 else None,
                                           top_p=top_p if temperature > 0 else None)
 
+        # Strip input tokens from generated_ids since we do not need them.
+        generated_tokens_only = generate_ids[:, inputs.input_ids.shape[1]:]
+
         decoded = processor.batch_decode(
-            generate_ids, skip_special_tokens=True
+            generated_tokens_only, skip_special_tokens=True
         )
 
-        for img, dec in zip(chunk, decoded):
-            try:
-                start = dec.index(image_prompt_start) + len(image_prompt_start)
-                caption = dec[start:].strip().replace("\n", "")
-            except ValueError:  # fallback when pattern not found
-                caption = dec.strip().replace("\n", "")
-
+        for img, desc in zip(chunk, decoded):
             prompts_data.append(
                 {
                     "image": img,
                     "prompt": original_prompt,
-                    "joycaption": caption,
+                    "joycaption": desc.strip().replace("\n", ""),
                 }
             )
 
