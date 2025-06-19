@@ -2,7 +2,7 @@ import pathlib
 
 import torch
 from PIL.Image import Image
-from tqdm import tqdm, trange
+from tqdm import trange
 from transformers import BlipProcessor, BlipForConditionalGeneration
 
 def load_clip(checkpoint: pathlib.Path):
