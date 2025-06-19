@@ -4,6 +4,7 @@ import click
 from captions.images_query import query_images
 from captions.joy.organize import organize_folder
 from captions.joy.files import process_caption_files
+from captions.joy.quality import quality_check
 from initialization import setup_config
 from model_selection import load_model, supported_joycaption_models
 
@@ -52,3 +53,4 @@ def process_caption_folder(
 
 folder.add_command(caption_folder)
 folder.add_command(organize_folder)
+folder.add_command(quality_check)
