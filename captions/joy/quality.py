@@ -1,13 +1,80 @@
 import json
+import math
 import os
 import shutil
 
+import PIL
 import click
+import numpy as np
 
 from captions.images_query import query_images
 from captions.joy.files import process_captions, transform_images
 from initialization import setup_config
 from model_selection import load_model, supported_joycaption_models
+
+
+def score_to_quality_label(score: int) -> str:
+    if score > 100:
+        return "Rejected"
+    elif score <= 0:
+        return "Flawless"
+    elif score <= 20:
+        return "Excellent"
+    elif score <= 40:
+        return "Fair"
+    elif score <= 60:
+        return "Mediocre"
+    elif score <= 80:
+        return "Defective"
+    else:
+        return "Rejected"
+
+
+@click.command("brisque_quality")
+@click.argument("folder")
+@click.option("--output")
+def brisque_quality_check(folder, output):
+    try:
+        target_path = output if output and len(output) > 0 else folder
+
+        image_paths = query_images(folder)
+        images = [PIL.Image.open(image_path) for image_path in image_paths]
+        from brisque.brisque import BRISQUE
+        import tqdm
+        bri = BRISQUE(url=False)
+        quality_label_map = {}
+
+        for idx in tqdm.trange(0, len(image_paths)):
+            try:
+                ndarr = np.asarray(images[idx])
+                score = bri.score(ndarr)
+                label = score_to_quality_label(score)
+
+                print(f"Rating image at [{image_paths[idx]}] with a score of [{math.trunc(score)}]")
+
+                quality_path = os.path.join(target_path, label)
+
+                if not os.path.exists(quality_path):
+                    print(f"Creating quality folder '{label}'")
+                    os.makedirs(quality_path)
+
+                source_image_path = image_paths[idx]
+                source_image_name = os.path.basename(source_image_path)
+                target_image_path = os.path.join(quality_path, source_image_name)
+
+                shutil.copyfile(source_image_path, target_image_path)
+                if label in quality_label_map:
+                    quality_label_map[label] += 1
+                else:
+                    quality_label_map[label] = 1
+            except Exception as e:
+                print(f"Error processing image {idx}: {e}")
+                quality_label_map["unclassified"] += 1
+            # Save quality distribution results
+            with open(os.path.join(target_path, "quality_results.json"), "w") as f:
+                json.dump(quality_label_map, f)
+    except Exception as e:
+        print("Exception occured, cannot use brisque to validate image quality due to:", e)
 
 
 @click.command("quality")
