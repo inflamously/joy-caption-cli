@@ -1,0 +1,108 @@
+{
+  "model": {
+    "alpha": {
+      "clip_model": "google/siglip-so400m-patch14-384",
+      "checkpoint_path": "models/cgrkzexw-599808",
+      "caption_types": {
+        "Descriptive": [
+          "Write a descriptive caption for this image in a formal tone.",
+          "Write a descriptive caption for this image in a formal tone within {word_count} words.",
+          "Write a {length} descriptive caption for this image in a formal tone."
+        ],
+        "Describe": [
+          "You are an AI trained to generate highly descriptive and accurate captions for images. Provide caption that capture essential visible details, colors, textures, shapes, objects, their relationships, and subtle or small features",
+          "You are an AI trained to generate highly descriptive and accurate captions for images. Provide caption that capture essential visible details, colors, textures, shapes, objects, their relationships, and subtle or small features within {word_count} words.",
+          "You are an AI trained to generate highly descriptive and accurate captions for images. Provide {length} caption that capture essential visible details, colors, textures, shapes, objects, their relationships, and subtle or small features"
+        ],
+        "Descriptive (Informal)": [
+          "Write a descriptive caption for this image in a casual tone.",
+          "Write a descriptive caption for this image in a casual tone within {word_count} words.",
+          "Write a {length} descriptive caption for this image in a casual tone."
+        ],
+        "Training Prompt": [
+          "Write a stable diffusion prompt for this image.",
+          "Write a stable diffusion prompt for this image within {word_count} words.",
+          "Write a {length} stable diffusion prompt for this image."
+        ],
+        "Training Flux Prompt (Old)": [
+          "Write a prompt for flux diffusion model which resembles a high-resolution scene, sharp details and vibrant contrast, showcasing a modern images with balanced lighting and natural shadow gradients. Ensure image is read clery on textures and a visually appealing aesthetic and design elements in the setting.",
+          "Write a prompt for flux diffusion model within {word_count} which resembles a high-resolution scene, sharp details and vibrant contrast, showcasing a modern images with balanced lighting and natural shadow gradients. Ensure image is read clery on textures and a visually appealing aesthetic and design elements in the setting.",
+          "Write a {length} prompt for flux diffusion model which resembles a high-resolution scene, sharp details and vibrant contrast, showcasing a modern images with balanced lighting and natural shadow gradients. Ensure image is read clery on textures and a visually appealing aesthetic and design elements in the setting."
+        ],
+        "Training Flux Prompt": [
+          "Write a prompt about detailed high-res images with wide details. Ensure aesthetically pleasing and realistic composition. Rate quality and ignore all text.",
+          "Write a prompt within {word_count} about detailed high-res images with wide details. Ensure aesthetically pleasing and realistic composition. Rate quality and ignore all text.",
+          "Write a {length} prompt about detailed high-res images with wide details. Ensure aesthetically pleasing and realistic composition. Rate quality and ignore all text."
+        ],
+        "MidJourney": [
+          "Write a MidJourney prompt for this image.",
+          "Write a MidJourney prompt for this image within {word_count} words.",
+          "Write a {length} MidJourney prompt for this image."
+        ],
+        "Art Critic": [
+          "Analyze this image like an art critic would with information about its composition, style, symbolism, the use of color, light, any artistic movement it might belong to, etc.",
+          "Analyze this image like an art critic would with information about its composition, style, symbolism, the use of color, light, any artistic movement it might belong to, etc. Keep it within {word_count} words.",
+          "Analyze this image like an art critic would with information about its composition, style, symbolism, the use of color, light, any artistic movement it might belong to, etc. Keep it {length}."
+        ],
+        "Product Listing": [
+          "Write a caption for this image as though it were a product listing.",
+          "Write a caption for this image as though it were a product listing. Keep it under {word_count} words.",
+          "Write a {length} caption for this image as though it were a product listing."
+        ],
+        "Social Media Post": [
+          "Write a caption for this image as if it were being used for a social media post.",
+          "Write a caption for this image as if it were being used for a social media post. Limit the caption to {word_count} words.",
+          "Write a {length} caption for this image as if it were being used for a social media post."
+        ]
+      }
+    },
+    "beta": {
+      "checkpoint_path": "fancyfeast/llama-joycaption-beta-one-hf-llava",
+      "caption_types": {
+        "Descriptive": [
+          "Write a detailed description for this image.",
+          "Write a detailed description for this image in {word_count} words or less.",
+          "Write a {length} detailed description for this image."
+        ],
+        "Descriptive (Casual)": [
+          "Write a descriptive caption for this image in a casual tone.",
+          "Write a descriptive caption for this image in a casual tone within {word_count} words.",
+          "Write a {length} descriptive caption for this image in a casual tone."
+        ],
+        "Straightforward": [
+          "Write a straightforward caption for this image. Begin with the main subject and medium. Mention pivotal elements—people, objects, scenery—using confident, definite language. Focus on concrete details like color, shape, texture, and spatial relationships. Show how elements interact. Omit mood and speculative wording. If text is present, quote it exactly. Note any watermarks, signatures, or compression artifacts. Never mention what's absent, resolution, or unobservable details. Vary your sentence structure and keep the description concise, without starting with “This image is…” or similar phrasing.",
+          "Write a straightforward caption for this image within {word_count} words. Begin with the main subject and medium. Mention pivotal elements—people, objects, scenery—using confident, definite language. Focus on concrete details like color, shape, texture, and spatial relationships. Show how elements interact. Omit mood and speculative wording. If text is present, quote it exactly. Note any watermarks, signatures, or compression artifacts. Never mention what's absent, resolution, or unobservable details. Vary your sentence structure and keep the description concise, without starting with “This image is…” or similar phrasing.",
+          "Write a {length} straightforward caption for this image. Begin with the main subject and medium. Mention pivotal elements—people, objects, scenery—using confident, definite language. Focus on concrete details like color, shape, texture, and spatial relationships. Show how elements interact. Omit mood and speculative wording. If text is present, quote it exactly. Note any watermarks, signatures, or compression artifacts. Never mention what's absent, resolution, or unobservable details. Vary your sentence structure and keep the description concise, without starting with “This image is…” or similar phrasing."
+        ],
+        "Stable Diffusion Prompt": [
+          "Output a stable diffusion prompt that is indistinguishable from a real stable diffusion prompt.",
+          "Output a stable diffusion prompt that is indistinguishable from a real stable diffusion prompt. {word_count} words or less.",
+          "Output a {length} stable diffusion prompt that is indistinguishable from a real stable diffusion prompt."
+        ],
+        "MidJourney": [
+          "Write a MidJourney prompt for this image.",
+          "Write a MidJourney prompt for this image within {word_count} words.",
+          "Write a {length} MidJourney prompt for this image."
+        ],
+        "Art Critic": [
+          "Analyze this image like an art critic would with information about its composition, style, symbolism, the use of color, light, any artistic movement it might belong to, etc.",
+          "Analyze this image like an art critic would with information about its composition, style, symbolism, the use of color, light, any artistic movement it might belong to, etc. Keep it within {word_count} words.",
+          "Analyze this image like an art critic would with information about its composition, style, symbolism, the use of color, light, any artistic movement it might belong to, etc. Keep it {length}."
+        ],
+        "Product Listing": [
+          "Write a caption for this image as though it were a product listing.",
+          "Write a caption for this image as though it were a product listing. Keep it under {word_count} words.",
+          "Write a {length} caption for this image as though it were a product listing."
+        ],
+        "Social Media Post": [
+          "Write a caption for this image as if it were being used for a social media post.",
+          "Write a caption for this image as if it were being used for a social media post. Limit the caption to {word_count} words.",
+          "Write a {length} caption for this image as if it were being used for a social media post."
+        ]
+      }
+    },
+    "clip": {
+      "checkpoint_path": "Salesforce/blip-image-captioning-large"
+    }
+  }
+}
