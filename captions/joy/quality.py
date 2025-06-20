@@ -13,6 +13,18 @@ from initialization import setup_config
 from model_selection import load_model, supported_joycaption_models
 
 
+def score_bluriness(raw_image_arr) -> str:
+    import cv2
+    gray_image = cv2.cvtColor(raw_image_arr, cv2.COLOR_BGR2GRAY)
+    score = cv2.Laplacian(gray_image, cv2.CV_64F).var()
+    if score < 30:
+        return "blur"
+    elif score < 60:
+        return "semiblur"
+    else:
+        return "noblur"
+
+
 def score_to_quality_label(score: int) -> str:
     if score > 100:
         return "Rejected"
@@ -48,7 +60,9 @@ def brisque_quality_check(folder, output):
             try:
                 ndarr = np.asarray(images[idx])
                 score = bri.score(ndarr)
-                label = score_to_quality_label(score)
+                label_blur = score_bluriness(ndarr)
+                label_brisque = score_to_quality_label(score)
+                label = f"{label_brisque}_{label_blur}".lower()
 
                 print(f"Rating image at [{image_paths[idx]}] with a score of [{math.trunc(score)}]")
 
