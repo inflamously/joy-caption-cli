@@ -13,33 +13,49 @@ from initialization import setup_config
 from model_selection import load_model, supported_joycaption_models
 
 
-def score_bluriness(raw_image_arr) -> str:
-    import cv2
-    gray_image = cv2.cvtColor(raw_image_arr, cv2.COLOR_BGR2GRAY)
-    score = cv2.Laplacian(gray_image, cv2.CV_64F).var()
-    if score < 30:
-        return "blur"
-    elif score < 60:
-        return "semiblur"
+def store_label_map(label_map: dict, target_path: str):
+    # Save quality distribution results
+    with open(os.path.join(target_path, "quality_results.json"), "w") as f:
+        json.dump(label_map, f)
+
+
+def create_label_folder(path):
+    if not os.path.exists(path):
+        print(f"Creating folder at '{path}'")
+        os.makedirs(path)
+
+
+def increment_label_in_map(labelmap, label):
+    if label in labelmap:
+        labelmap[label] += 1
     else:
-        return "noblur"
+        labelmap[label] = 1
+    return labelmap
 
 
 def score_to_quality_label(score: int) -> str:
-    if score > 100:
-        return "Rejected"
-    elif score <= 0:
-        return "Flawless"
+    if score <= 0:
+        return "a-perfect"
+    elif score <= 10:
+        return "b-excellent"
     elif score <= 20:
-        return "Excellent"
+        return "c-very good"
+    elif score <= 30:
+        return "d-good"
     elif score <= 40:
-        return "Fair"
+        return "e-decent"
+    elif score <= 50:
+        return "f-fair"
     elif score <= 60:
-        return "Mediocre"
+        return "g-mediocre"
+    elif score <= 70:
+        return "h-poor"
     elif score <= 80:
-        return "Defective"
+        return "i-very poor"
+    elif score <= 90:
+        return "j-awful"
     else:
-        return "Rejected"
+        return "x-rejected"
 
 
 @click.command("brisque_quality")
@@ -51,6 +67,7 @@ def brisque_quality_check(folder, output):
 
         image_paths = query_images(folder)
         images = [PIL.Image.open(image_path) for image_path in image_paths]
+        images_features = [np.asarray(image) for image in images]
         from brisque.brisque import BRISQUE
         import tqdm
         bri = BRISQUE(url=False)
@@ -58,35 +75,26 @@ def brisque_quality_check(folder, output):
 
         for idx in tqdm.trange(0, len(image_paths)):
             try:
-                ndarr = np.asarray(images[idx])
-                score = bri.score(ndarr)
-                label_blur = score_bluriness(ndarr)
+                score = bri.multi_score(images_features[idx])
                 label_brisque = score_to_quality_label(score)
-                label = f"{label_brisque}_{label_blur}".lower()
+                label = f"{label_brisque}".lower()
 
                 print(f"Rating image at [{image_paths[idx]}] with a score of [{math.trunc(score)}]")
 
                 quality_path = os.path.join(target_path, label)
 
-                if not os.path.exists(quality_path):
-                    print(f"Creating quality folder '{label}'")
-                    os.makedirs(quality_path)
+                create_label_folder(quality_path)
 
                 source_image_path = image_paths[idx]
                 source_image_name = os.path.basename(source_image_path)
                 target_image_path = os.path.join(quality_path, source_image_name)
 
                 shutil.copyfile(source_image_path, target_image_path)
-                if label in quality_label_map:
-                    quality_label_map[label] += 1
-                else:
-                    quality_label_map[label] = 1
+                quality_label_map = increment_label_in_map(quality_label_map, label)
             except Exception as e:
                 print(f"Error processing image {idx}: {e}")
                 quality_label_map["unclassified"] += 1
-            # Save quality distribution results
-            with open(os.path.join(target_path, "quality_results.json"), "w") as f:
-                json.dump(quality_label_map, f)
+            store_label_map(quality_label_map, target_path)
     except Exception as e:
         print("Exception occured, cannot use brisque to validate image quality due to:", e)
 
@@ -153,25 +161,19 @@ Focus solely on technical image quality defects. Output only one category name w
                 quality_label = "unclassified"
 
             quality_path = os.path.join(target_path, quality_label)
-
-            if not os.path.exists(quality_path):
-                print(f"Creating quality folder '{quality_label}'")
-                os.makedirs(quality_path)
+            create_label_folder(quality_path)
 
             source_image_path = image_paths[idx]
             source_image_name = os.path.basename(source_image_path)
             target_image_path = os.path.join(quality_path, source_image_name)
 
             shutil.copyfile(source_image_path, target_image_path)
-            quality_destination_map[quality_label] += 1
-
+            quality_destination_map = increment_label_in_map(quality_destination_map, quality_label)
         except Exception as e:
             print(f"Error processing image {idx}: {e}")
-            quality_destination_map["unclassified"] += 1
+            quality_destination_map = increment_label_in_map(quality_destination_map, "unclassified")
 
-    # Save quality distribution results
-    with open(os.path.join(target_path, "quality_results.json"), "w") as f:
-        json.dump(quality_destination_map, f)
+    store_label_map(quality_destination_map, target_path)
 
     # Print summary
     print("\nQuality Classification Summary:")
