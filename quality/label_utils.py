@@ -5,7 +5,7 @@ import os
 def store_label_map(label_map: dict, target_path: str):
     # Save quality distribution results
     with open(os.path.join(target_path, "quality_results.json"), "w") as f:
-        json.dump(label_map, f)
+        json.dump(label_map, f, indent=4)
 
 
 def create_label_folder(path):

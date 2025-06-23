@@ -1,4 +1,5 @@
-import os
+from captions.query_files import query_files
+
 
 # File: images_query.py
 # Author: nflamously
@@ -6,14 +7,4 @@ import os
 
 
 def query_images(path) -> list[str | bytes]:
-    images = []
-    image_extensions = [".jpg", ".jpeg", ".png", ".webp"]
-
-    # Recurse all images and their paths.
-    for root, dirs, files in os.walk(path):
-        for file in files:
-            for ext in image_extensions:
-                if file.endswith(ext):
-                    images.append(os.path.join(root, file))
-
-    return images
+    return query_files(path, [".jpg", ".jpeg", ".png", ".webp"])
