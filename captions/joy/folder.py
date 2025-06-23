@@ -4,10 +4,9 @@ import click
 
 from captions.images_query import query_images
 from captions.joy.files import process_caption_files
-from captions.joy.organize import organize_folder
-from captions.joy.quality import quality_check, brisque_quality_check
 from initialization import setup_config
 from model_selection import load_model, supported_joycaption_models
+
 
 # File: folder.py
 # Author: nflamously
@@ -31,16 +30,16 @@ def folder():
 @click.option("--batch_size", default=1)
 @click.option("--prompt_prefix", default="")
 def caption_folder(
-    model_type: str,
-    path: str,
-    output: str,
-    name: str,
-    caption_type: str,
-    caption_length: str,
-    extra_options: list[str],
-    custom_prompt: str,
-    batch_size: int,
-    prompt_prefix: str,
+        model_type: str,
+        path: str,
+        output: str,
+        name: str,
+        caption_type: str,
+        caption_length: str,
+        extra_options: list[str],
+        custom_prompt: str,
+        batch_size: int,
+        prompt_prefix: str,
 ):
     setup_config(model_type)
     load_model()
@@ -58,15 +57,15 @@ def caption_folder(
 
 
 def process_caption_folder(
-    path: str,
-    output: str,
-    name: str,
-    caption_type: str,
-    caption_length: str,
-    extra_options: list[str],
-    custom_prompt: str,
-    batch_size: int = 1,
-    prompt_prefix: str = "",
+        path: str,
+        output: str,
+        name: str,
+        caption_type: str,
+        caption_length: str,
+        extra_options: list[str],
+        custom_prompt: str,
+        batch_size: int = 1,
+        prompt_prefix: str = "",
 ):
     if not os.path.exists(path):
         raise Exception("Path does not exist")
@@ -88,6 +87,3 @@ def process_caption_folder(
 
 
 folder.add_command(caption_folder)
-folder.add_command(organize_folder)
-folder.add_command(quality_check)
-folder.add_command(brisque_quality_check)

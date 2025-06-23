@@ -5,6 +5,8 @@ from captions.joy.file import file as joy_file_command
 from captions.joy.folder import folder as joy_folder_command
 from captions.joy.profiling import caption_profile_image as joy_caption_profile_image
 from initialization import setup_config
+from quality.quality_check import quality_check
+
 
 # File: cli.py
 # Author: nflamously
@@ -42,6 +44,7 @@ if __name__ == "__main__":
     # Stable Diffusion 1.5 -> CLIP
     clip_caption.add_command(clip_caption_folder)
 
+    cli.add_command(quality_check)
     cli.add_command(clip_caption)
     cli.add_command(version)
     cli.add_command(caption)
