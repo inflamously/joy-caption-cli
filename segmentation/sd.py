@@ -1,3 +1,4 @@
+import PIL
 import torch
 from PIL import Image
 import numpy as np
@@ -58,7 +59,7 @@ def segment_image_sd(image_path, output_path, model_name, use_cuda, output_forma
             # TODO
             # seg_image.save(output_path)
             print("Output saved successfully.")
-        
+
         elif output_format == 'json':
             print("Converting segmentation to bounding boxes...")
             # Find unique colors, ignoring black (background)
@@ -66,26 +67,28 @@ def segment_image_sd(image_path, output_path, model_name, use_cuda, output_forma
             unique_colors = unique_colors[unique_colors != 0]
 
             bounding_boxes = []
+            cloned_image_array = seg_array.copy()
             for color in unique_colors:
                 # Create a mask for the current color
                 mask = np.uint8(seg_array == color) * 255
-                
+
                 # Find contours
                 contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-                
                 if contours:
                     # Combine all contours for the current color into a single one
                     all_points = np.concatenate(contours)
                     x, y, w, h = cv2.boundingRect(all_points)
                     bounding_boxes.append({
                         'label': int(color),
-                        'box': [x, y, x + w, y + h] # top-left and bottom-right corners
+                        'box': [x, y, x + w, y + h]  # top-left and bottom-right corners
                     })
-
-            print(f"Saving bounding boxes to '{output_path}'...")
-            with open(output_path, 'w') as f:
-                json.dump(bounding_boxes, f, indent=4)
-            print("Bounding boxes saved successfully.")
+                    cv2.rectangle(cloned_image_array, (x, y), (x + w, y + h), (255, 0, 0), 2)
+            im = PIL.Image.fromarray(cloned_image_array)
+            im.show("BBOX")
+            # print(f"Saving bounding boxes to '{output_path}'...")
+            # with open(output_path, 'w') as f:
+            #     json.dump(bounding_boxes, f, indent=4)
+            # print("Bounding boxes saved successfully.")
 
     except Exception as e:
         print(f"An error occurred: {e}")
