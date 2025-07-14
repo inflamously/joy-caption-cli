@@ -1,0 +1,3 @@
+[submodule "segmentation/gen2seg"]
+	path = segmentation/gen2seg
+	url = https://github.com/UCDvision/gen2seg

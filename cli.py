@@ -1,5 +1,6 @@
 import click
 
+from segmentation.segmentation import segmentation, has_gen2seg_installed
 from captions.clip.folder import folder as clip_caption_folder
 from captions.joy.file import file as joy_file_command
 from captions.joy.folder import folder as joy_folder_command
@@ -48,5 +49,8 @@ if __name__ == "__main__":
     cli.add_command(clip_caption)
     cli.add_command(version)
     cli.add_command(caption)
+
+    if has_gen2seg_installed():
+        cli.add_command(segmentation)
 
     cli()
