@@ -66,7 +66,9 @@ def segment_image_sd(image_path, output_path, model_name, use_cuda, output_forma
             unique_colors = np.unique(seg_array)
             unique_colors = unique_colors[unique_colors != 0]
 
-            bounding_boxes = []
+            raw_bbox = []
+            scores = np.array([])
+            labels = np.array([])
             cloned_image_array = seg_array.copy()
             for color in unique_colors:
                 # Create a mask for the current color
@@ -78,11 +80,21 @@ def segment_image_sd(image_path, output_path, model_name, use_cuda, output_forma
                     # Combine all contours for the current color into a single one
                     all_points = np.concatenate(contours)
                     x, y, w, h = cv2.boundingRect(all_points)
-                    bounding_boxes.append({
-                        'label': int(color),
-                        'box': [x, y, x + w, y + h]  # top-left and bottom-right corners
-                    })
-                    cv2.rectangle(cloned_image_array, (x, y), (x + w, y + h), (255, 0, 0), 2)
+                    raw_bbox.append([x, y, w, h])
+                    scores = np.append(scores, cv2.contourArea(all_points))
+                    labels = np.append(labels, color)
+
+            indices = cv2.dnn.NMSBoxes(bboxes=raw_bbox, scores=scores, score_threshold=0.9, nms_threshold=0.5)
+
+            nms_bounding_boxes = {
+                "scores": scores[indices],
+                "bbox": np.array(raw_bbox)[indices],
+                "color": labels[indices],
+            }
+
+            for x, y, w, h in nms_bounding_boxes["bbox"]:
+                cv2.rectangle(cloned_image_array, (x, y), (x + w, y + h), (255, 0, 0), 2)
+
             im = PIL.Image.fromarray(cloned_image_array)
             im.show("BBOX")
             # print(f"Saving bounding boxes to '{output_path}'...")
