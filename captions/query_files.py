@@ -1,5 +1,8 @@
 import os
 
+# File: query_files.py
+# Author: nflamously
+# Original License: Apache License 2.0
 
 def query_files(path: str, extensions: list) -> list:
     results = []
