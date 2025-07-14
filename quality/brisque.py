@@ -5,6 +5,8 @@ import shutil
 import PIL
 import click
 import numpy as np
+from brisque.brisque import BRISQUEConfig
+from brisque.brisque_implementation import BrisqueImplementation
 
 from captions.images_query import query_images
 from quality.label_utils import create_label_folder, increment_label_in_map, store_label_map
@@ -14,21 +16,25 @@ from quality.scoring import brisque_score_to_quality_label
 @click.command("brisque")
 @click.argument("folder")
 @click.option("--output")
-def brisque_check(folder, output):
+@click.option("--implementation", default=BrisqueImplementation.Pytorch)
+@click.option("--walk_tree", default=False)
+def brisque_check(folder, output, implementation, walk_tree):
     try:
         target_path = output if output and len(output) > 0 else folder
 
-        image_paths = query_images(folder)
+        image_paths = query_images(folder, walk_tree)
         images = [PIL.Image.open(image_path) for image_path in image_paths]
         images_features = [np.asarray(image) for image in images]
         from brisque.brisque import BRISQUE
         import tqdm
-        bri = BRISQUE(url=False)
-        quality_label_map = {}
+        bri = BRISQUE(implementation)
+        quality_label_map = {
+            "unclassified": 0,
+        }
 
         for idx in tqdm.trange(0, len(image_paths)):
             try:
-                score = bri.multi_score(images_features[idx])
+                score = bri.score(images_features[idx])
                 label_brisque = brisque_score_to_quality_label(score)
                 label = f"{label_brisque}".lower()
 

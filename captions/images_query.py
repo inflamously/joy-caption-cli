@@ -1,4 +1,4 @@
-from captions.query_files import query_files
+from captions.query_files import query_files, query_root_files
 
 
 # File: images_query.py
@@ -6,5 +6,9 @@ from captions.query_files import query_files
 # Original License: Apache License 2.0
 
 
-def query_images(path) -> list[str | bytes]:
-    return query_files(path, [".jpg", ".jpeg", ".png", ".webp"])
+def query_images(path, walk_tree=True) -> list[str | bytes]:
+    extensions = [".jpg", ".jpeg", ".png", ".webp"]
+    if walk_tree:
+        return query_files(path, extensions)
+    else:
+        return query_root_files(path, extensions)
