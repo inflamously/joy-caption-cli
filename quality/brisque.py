@@ -17,7 +17,7 @@ from quality.scoring import brisque_score_to_quality_label
 @click.argument("folder")
 @click.option("--output")
 @click.option("--implementation", default=BrisqueImplementation.Pytorch)
-@click.option("--walk_tree", default=False)
+@click.option("--walk_tree", is_flag=True)
 def brisque_check(folder, output, implementation, walk_tree):
     try:
         target_path = output if output and len(output) > 0 else folder
