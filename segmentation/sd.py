@@ -1,110 +1,85 @@
+import os.path
+from pathlib import Path
+from typing import List
+
 import PIL
-import torch
-from PIL import Image
-import numpy as np
-import time
 import click
-import cv2
-import json
+import tqdm
 
-from segmentation.gen2seg.gen2seg_sd_pipeline import gen2segSDPipeline
+from captions.images_query import load_image, query_images, stream_image_files
+from segmentation.gen2seg_wrapper import segment_image, get_model
+from segmentation.operations import kmeans_color_distance, unique_color_bboxes, draw_bboxes, nms_color_boxes, \
+    bboxes_to_points, draw_points, aspect_ratio_bboxes_from_points, multi_crop_images_from_bboxes
 
 
-@click.command("sd")
-@click.argument('image_path', type=click.Path(exists=True))
-@click.option('--output_path', type=click.Path())
-@click.option('--model_name', type=str, default='reachomk/gen2seg-sd')
-@click.option('--use_cuda', type=bool, default=True)
-@click.option('--output-format', type=click.Choice(['image', 'json']), default='json', help='The format of the output.')
-def segment_image_sd(image_path, output_path, model_name, use_cuda, output_format):
-    """
-    Generates an instance segmentation map for a given image using a pretrained gen2seg model.
-    """
+def matrix_crop_image(img: PIL.Image.Image, pipe, threshold=20, kmeans_iter=20, min_clusters=2) -> List[
+    PIL.Image.Image]:
+    seq_image = segment_image(img, pipe)
+    seq_image, centers, labels = kmeans_color_distance(seq_image, threshold, kmeans_iter, min_clusters)
+    bboxes = unique_color_bboxes(seq_image)
+    points = bboxes_to_points(nms_color_boxes(bboxes))
+    bboxes = aspect_ratio_bboxes_from_points(points, aspect_ratios=1 / 1, size=1024)
+    return multi_crop_images_from_bboxes(img, bboxes)
+
+
+def save_crops_to_folder(crops, image_path):
     try:
-        if use_cuda and not torch.cuda.is_available():
-            print("Warning: CUDA is not available. Falling back to CPU.")
-            use_cuda = False
-
-        device = "cuda" if use_cuda else "cpu"
-
-        print(f"Loading model '{model_name}'...")
-        pipe = gen2segSDPipeline.from_pretrained(
-            model_name,
-            use_safetensors=True,
-        ).to(device)
-        print("Model loaded successfully.")
-
-        print(f"Loading image from '{image_path}'...")
-        image = Image.open(image_path).convert("RGB")
-        orig_res = image.size
-
-        print("Running inference...")
-        with torch.no_grad():
-            start_time = time.time()
-            try:
-                seg = pipe(image).prediction.squeeze()
-            except Exception as e:
-                print(f"An error occurred during inference: {e}")
-                return
-            end_time = time.time()
-        print(f"Inference completed in {end_time - start_time:.2f} seconds.")
-
-        # Resize segmentation to original image resolution
-        seg_image = Image.fromarray(np.array(seg).astype(np.uint8)).resize(orig_res, Image.LANCZOS)
-        seg_array = np.array(seg_image)
-        seg_array = cv2.cvtColor(seg_array, cv2.COLOR_BGR2GRAY)
-
-        if output_format == 'image':
-            print(f"Saving output image to '{output_path}'...")
-            # TODO
-            # seg_image.save(output_path)
-            print("Output saved successfully.")
-
-        elif output_format == 'json':
-            print("Converting segmentation to bounding boxes...")
-            # Find unique colors, ignoring black (background)
-            unique_colors = np.unique(seg_array)
-            unique_colors = unique_colors[unique_colors != 0]
-
-            raw_bbox = []
-            scores = np.array([])
-            labels = np.array([])
-            cloned_image_array = seg_array.copy()
-            for color in unique_colors:
-                # Create a mask for the current color
-                mask = np.uint8(seg_array == color) * 255
-
-                # Find contours
-                contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-                if contours:
-                    # Combine all contours for the current color into a single one
-                    all_points = np.concatenate(contours)
-                    x, y, w, h = cv2.boundingRect(all_points)
-                    raw_bbox.append([x, y, w, h])
-                    scores = np.append(scores, cv2.contourArea(all_points))
-                    labels = np.append(labels, color)
-
-            indices = cv2.dnn.NMSBoxes(bboxes=raw_bbox, scores=scores, score_threshold=0.9, nms_threshold=0.5)
-
-            nms_bounding_boxes = {
-                "scores": scores[indices],
-                "bbox": np.array(raw_bbox)[indices],
-                "color": labels[indices],
-            }
-
-            for x, y, w, h in nms_bounding_boxes["bbox"]:
-                cv2.rectangle(cloned_image_array, (x, y), (x + w, y + h), (255, 0, 0), 2)
-
-            im = PIL.Image.fromarray(cloned_image_array)
-            im.show("BBOX")
-            # print(f"Saving bounding boxes to '{output_path}'...")
-            # with open(output_path, 'w') as f:
-            #     json.dump(bounding_boxes, f, indent=4)
-            # print("Bounding boxes saved successfully.")
-
+        image_path_item = Path(image_path)
+        target_directory = os.path.join(image_path_item.parent, "segmentation")
+        if not os.path.exists(target_directory):
+            os.mkdir(target_directory)
+        idx = 1
+        for crop in crops:
+            target_image_path = os.path.join(target_directory, f"{idx}_{image_path_item.name}")
+            crop.save(target_image_path)
+            idx += 1
     except Exception as e:
         print(f"An error occurred: {e}")
 
 
-if __name__ == '__main__':
-    segment_image_sd()
+@click.group("sd")
+def sd():
+    pass
+
+
+@click.command("single")
+@click.argument('image_path', type=click.Path(exists=True))
+@click.option('--model_name', type=str, default='reachomk/gen2seg-sd')
+@click.option('--use_cuda', type=bool, default=True)
+@click.option('--output-format', type=click.Choice(['image', 'json']), default='image',
+              help='The format of the output.')
+def single_segment_image(image_path, model_name, use_cuda, output_format):
+    try:
+        orig_image = load_image(image_path)
+        pipe = get_model(use_cuda, model_name)
+        crops = matrix_crop_image(img=orig_image, pipe=pipe)
+        if output_format == 'image':
+            save_crops_to_folder(crops, image_path)
+        else:
+            pass
+    except Exception as e:
+        print(f"An error occurred: {e}")
+
+
+@click.command("multi")
+@click.argument('path', type=click.Path(exists=True))
+@click.option('--model_name', type=str, default='reachomk/gen2seg-sd')
+@click.option('--use_cuda', type=bool, default=True)
+@click.option('--output-format', type=click.Choice(['image', 'json']), default='image', help='The format of the output.')
+def multi_segment_image(path, model_name, use_cuda, output_format):
+    images = query_images(path)
+    pipe = get_model(use_cuda, model_name)
+    try:
+        for batched_images, batched_paths in stream_image_files(images):
+            for idx in tqdm.trange(0, len(batched_paths), 1, desc="Processing batched images"):
+                crops = matrix_crop_image(img=batched_images[idx], pipe=pipe)
+                if output_format == 'image':
+                    save_crops_to_folder(crops, batched_paths[idx])
+                else:
+                    pass
+    except Exception as e:
+        print(f"An error occurred: {e}")
+
+
+sd.add_command(single_segment_image)
+sd.add_command(multi_segment_image)

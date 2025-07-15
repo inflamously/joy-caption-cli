@@ -4,7 +4,7 @@ import os
 # Author: nflamously
 # Original License: Apache License 2.0
 
-def query_files(path: str, extensions: list) -> list:
+def query_files(path: str, extensions: list) -> list[str]:
     results = []
     for root, dirs, files in os.walk(path):
         for file in files:

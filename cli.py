@@ -26,7 +26,7 @@ def version():
 
 @click.group("joycaption")
 def caption():
-    pass
+    setup_config()
 
 
 @click.group("clip")
@@ -35,8 +35,6 @@ def clip_caption():
 
 
 if __name__ == "__main__":
-    setup_config()
-
     # Joy Caption
     caption.add_command(joy_file_command)
     caption.add_command(joy_folder_command)

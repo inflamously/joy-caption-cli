@@ -10,8 +10,11 @@ from captions.query_files import query_files, query_root_files
 # Author: nflamously
 # Original License: Apache License 2.0
 
+def load_image(path):
+    return PIL.Image.open(path)
 
-def query_images(path, walk_tree=True) -> list[str | bytes]:
+
+def query_images(path, walk_tree=True) -> list[str]:
     extensions = [".jpg", ".jpeg", ".png", ".webp"]
     if walk_tree:
         return query_files(path, extensions)
