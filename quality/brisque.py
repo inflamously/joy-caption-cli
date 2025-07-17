@@ -9,7 +9,7 @@ from brisque.brisque_implementation import BrisqueImplementation
 
 from captions.images_query import query_images, stream_image_files
 from quality.label_utils import create_label_folder, increment_label_in_map, store_label_map
-from quality.scoring import brisque_score_to_quality_label
+from quality.data_category_score import brisque_score_to_quality_label
 
 
 def get_label_from_score(score):

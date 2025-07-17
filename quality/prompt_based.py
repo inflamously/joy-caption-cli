@@ -8,7 +8,7 @@ from captions.joy.files import transform_images, process_captions
 from initialization import setup_config
 from model_selection import load_model, supported_joycaption_models
 from quality.label_utils import create_label_folder, increment_label_in_map, store_label_map
-from quality.scoring import prompt_score_to_quality_label
+from quality.data_category_score import prompt_score_to_quality_label
 
 
 def custom_prompt():
