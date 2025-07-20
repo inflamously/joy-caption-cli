@@ -3,7 +3,8 @@ import click
 from quality.aspect_ratio import aspectratio
 from quality.compare import compare
 from quality.label_check import label_check
-from quality.brisque import brisque_check, pyiqa_metrics
+from quality.brisque import brisque_check
+from quality.pyiqa_metrics import pyiqa_metrics
 from quality.organize import organize_folder
 from quality.prompt_based import prompt_based_check
 

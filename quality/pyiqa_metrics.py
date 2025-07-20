@@ -1,49 +1,53 @@
 import math
-import os
 import shutil
 
 import click
 import numpy as np
 from PIL import ImageFile
-from brisque.brisque_implementation import BrisqueImplementation
 
 from captions.images_query import query_images, stream_image_files
+from quality.brisque import get_label_from_score
 from quality.label_utils import create_label_folder, increment_label_in_map, store_label_map
-from quality.data_category_score import brisque_score_to_quality_label
 
 
-def get_label_from_score(score):
-    label_brisque = brisque_score_to_quality_label(score)
-    return f"{label_brisque}".lower()
-
-
-@click.command("brisque")
+@click.command("pyiqa_metrics")
 @click.argument("folder")
 @click.option("--output")
-@click.option("--implementation", default=BrisqueImplementation.Pytorch)
 @click.option("--walk_tree", is_flag=True)
 @click.option("--stream_batch_size", type=int, default=1000)
-def brisque_check(folder, output, implementation, stream_batch_size, walk_tree):
+def pyiqa_metrics(folder, output, stream_batch_size, walk_tree):
     try:
+        # !/usr/bin/env python3
+        import cv2, os, pandas as pd, pyiqa, torch
+        from pathlib import Path
+
+        # ---------- config ----------
+        METRICS = ["brisque", "maniqa", "dbcnn"]  # any PyIQA NR metric
+        DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        # ----------------------------
+
+        # create metric objects
+        iqa = {m: pyiqa.create_metric(m, device=DEVICE) for m in METRICS}
+
         ImageFile.LOAD_TRUNCATED_IMAGES = True
 
         target_path = output if output and len(output) > 0 else folder
         image_paths = query_images(folder, walk_tree)
 
-        from brisque.brisque import BRISQUE
-
-        bri = BRISQUE(implementation)
         quality_label_map = {
             "unclassified": 0,
         }
 
         image_index = 0
         for batched_images, batched_paths in stream_image_files(image_paths, batch_size=stream_batch_size):
-            features = [np.asarray(image) for image in batched_images]
             for idx in range(len(batched_images)):
                 image_index += 1
                 try:
-                    score = bri.score(features[idx])
+                    scores = np.array([])
+                    for m in METRICS:
+                        scores = np.append(scores, float(iqa[m](batched_images[idx]).item()))
+
+                    score = scores.mean()
                     label = get_label_from_score(score)
 
                     print(f"Rating image at [{batched_paths[idx]}] with a score of [{math.trunc(score)}]")
