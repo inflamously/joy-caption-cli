@@ -1,10 +1,23 @@
 import os
 import shutil
+from pathlib import Path
 
-from quality.label_utils import create_label_folder
+
+def should_copy_subfolder_to_path(label_path: str, source_image_path: str):
+    parent_a = Path(label_path).parent
+    parent_b = Path(source_image_path).parent
+
+    if parent_a.name == parent_b.name:
+        return False
+    else:
+        return True
 
 
 def store_images(label_path: str, source_image_path: str, target_image_path: str):
-    create_label_folder(label_path)
-    target_image_path = os.path.join(label_path, target_image_path)
-    shutil.copyfile(source_image_path, target_image_path)
+    if should_copy_subfolder_to_path(label_path, source_image_path):
+        target_path_for_image = os.path.join(label_path, Path(source_image_path).parent.name,
+                                             Path(target_image_path).name)
+    else:
+        target_path_for_image = os.path.join(label_path, target_image_path)
+    os.makedirs(os.path.dirname(target_path_for_image), exist_ok=True)
+    shutil.copyfile(source_image_path, target_path_for_image)
