@@ -3,11 +3,24 @@ import shutil
 
 import click
 import numpy as np
+import tqdm
 from PIL import ImageFile
 
 from captions.images_query import query_images, stream_image_files
-from quality.brisque import get_label_from_score
+from quality.data_category_score import score_to_quality_label_pyiqa
 from quality.label_utils import create_label_folder, increment_label_in_map, store_label_map
+
+
+def process_brisque_score(score: float) -> float:
+    norm_score = score / 100.0  # Make it 0-1
+    return 1 - norm_score  # Invert score from 0.3 to -> 0.7 (Higher better)
+
+
+# Good weights: [0.0, 1.0, 0.5]
+def get_label_from_scores(brisque, maniqa, dbcnn):
+    brisque_norm_score = process_brisque_score(brisque)
+    final_score = np.average([brisque_norm_score, maniqa, dbcnn], weights=[0.0, 1.0, 0.1]) * 100  # Rescale to 0-100
+    return score_to_quality_label_pyiqa(math.trunc(final_score)), final_score  # Truncate for proper score.
 
 
 @click.command("pyiqa_metrics")
@@ -22,7 +35,8 @@ def pyiqa_metrics(folder, output, stream_batch_size, walk_tree):
         from pathlib import Path
 
         # ---------- config ----------
-        METRICS = ["brisque", "maniqa", "dbcnn"]  # any PyIQA NR metric
+        # METRICS = ["brisque", "maniqa", "dbcnn"]  # any PyIQA NR metric
+        METRICS = ["maniqa", "dbcnn"]  # any PyIQA NR metric
         DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         # ----------------------------
 
@@ -40,17 +54,17 @@ def pyiqa_metrics(folder, output, stream_batch_size, walk_tree):
 
         image_index = 0
         for batched_images, batched_paths in stream_image_files(image_paths, batch_size=stream_batch_size):
-            for idx in range(len(batched_images)):
+            for idx in tqdm.trange(len(batched_images)):
                 image_index += 1
                 try:
-                    scores = np.array([])
+                    scores = np.array([0.0])
+
                     for m in METRICS:
                         scores = np.append(scores, float(iqa[m](batched_images[idx]).item()))
 
-                    score = scores.mean()
-                    label = get_label_from_score(score)
+                    label, score = get_label_from_scores(scores[0], scores[1], scores[2])
 
-                    print(f"Rating image at [{batched_paths[idx]}] with a score of [{math.trunc(score)}]")
+                    print(f"Rating image at [{batched_paths[idx]}] with a scores of [{score}]")
 
                     quality_path = os.path.join(target_path, label)
                     create_label_folder(quality_path)

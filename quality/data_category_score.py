@@ -1,4 +1,24 @@
-def brisque_score_to_quality_label(score: int) -> str:
+def score_to_quality_label_pyiqa(score: int) -> str:
+    if score > 90:
+        return "a-perfect"
+    elif score > 80:
+        return "b-excellent"
+    elif score > 70:
+        return "c-very good"
+    elif score > 60:
+        return "d-good"
+    elif score > 50:
+        return "e-decent"
+    elif score > 40:
+        return "f-fair"
+    elif score > 30:
+        return "g-mediocre"
+    elif score > 20:
+        return "h-poor"
+    else:
+        return "x-rejected"
+
+def score_to_quality_label_brisque(score: int) -> str:
     if score <= 0:
         return "a-perfect"
     elif score <= 10:

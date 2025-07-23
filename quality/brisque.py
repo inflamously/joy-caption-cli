@@ -9,12 +9,11 @@ from brisque.brisque_implementation import BrisqueImplementation
 
 from captions.images_query import query_images, stream_image_files
 from quality.label_utils import create_label_folder, increment_label_in_map, store_label_map
-from quality.data_category_score import brisque_score_to_quality_label
+from quality.data_category_score import score_to_quality_label_brisque
 
 
-def get_label_from_score(score):
-    label_brisque = brisque_score_to_quality_label(score)
-    return f"{label_brisque}".lower()
+def get_label_from_score(score) -> str:
+    return score_to_quality_label_brisque(score).lower()
 
 
 @click.command("brisque")
