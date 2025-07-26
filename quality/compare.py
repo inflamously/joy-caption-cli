@@ -50,8 +50,6 @@ def phash_compare(img_a: PIL.Image.Image, img_b: PIL.Image.Image):
 @click.option("--stream_batch_size", type=int, default=1000)
 def compare(folder: str, walk_tree, stream_batch_size) -> None:
     try:
-        PIL.ImageFile.LOAD_TRUNCATED_IMAGES = True
-
         source_path = Path(folder)
         image_paths = query_images(folder, walk_tree)
         similiarity_map = {

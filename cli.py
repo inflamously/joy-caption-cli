@@ -1,4 +1,5 @@
 import click
+from PIL import ImageFile
 
 from segmentation.segmentation import segmentation, has_gen2seg_installed
 from captions.clip.folder import folder as clip_caption_folder
@@ -35,6 +36,9 @@ def clip_caption():
 
 
 if __name__ == "__main__":
+    # Image edge case to handle
+    ImageFile.LOAD_TRUNCATED_IMAGES = True
+
     # Joy Caption
     caption.add_command(joy_file_command)
     caption.add_command(joy_folder_command)

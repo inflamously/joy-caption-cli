@@ -43,8 +43,6 @@ def pyiqa_metrics(folder, output, stream_batch_size, walk_tree):
         # create metric objects
         iqa = {m: pyiqa.create_metric(m, device=DEVICE) for m in METRICS}
 
-        ImageFile.LOAD_TRUNCATED_IMAGES = True
-
         target_path = output if output and len(output) > 0 else folder
         image_paths = query_images(folder, walk_tree)
 

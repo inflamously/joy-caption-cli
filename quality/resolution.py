@@ -32,8 +32,6 @@ def get_label_from_scores(brisque, maniqa, dbcnn):
 @click.option("--stream_batch_size", type=int, default=1000)
 def resolution(folder: str, walk_tree, root_folder_only, stream_batch_size) -> None:
     try:
-        PIL.ImageFile.LOAD_TRUNCATED_IMAGES = True
-
         source_path = Path(folder)
         image_paths = query_images(folder, walk_tree)
 

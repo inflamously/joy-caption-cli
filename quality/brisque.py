@@ -24,8 +24,6 @@ def get_label_from_score(score) -> str:
 @click.option("--stream_batch_size", type=int, default=1000)
 def brisque_check(folder, output, implementation, stream_batch_size, walk_tree):
     try:
-        ImageFile.LOAD_TRUNCATED_IMAGES = True
-
         target_path = output if output and len(output) > 0 else folder
         image_paths = query_images(folder, walk_tree)
 
