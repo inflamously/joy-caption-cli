@@ -12,6 +12,7 @@ from model_facade import model_beta
 from prompt_image import caption_images
 from state import APP_STATE
 
+
 # File: files.py
 # Author: nflamously
 # Original License: Apache License 2.0
@@ -29,15 +30,16 @@ def transform_images(files: List[str]):
 
 
 def process_caption_files(
-    files: List[str],
-    output: str,
-    caption_type: str = "Descriptive",
-    caption_length: str = "long",
-    name: str = "",
-    extra_options=None,
-    custom_prompt: str = "",
-    batch_size: int = 1,
-    prompt_prefix: str = "",
+        files: List[str],
+        output: str,
+        caption_type: str = "Descriptive",
+        caption_length: str = "long",
+        name: str = "",
+        extra_options=None,
+        custom_prompt: str = "",
+        batch_size: int = 1,
+        prompt_prefix: str = "",
+        prompt_suffix: str = "",
 ):
     if extra_options is None:
         extra_options = []
@@ -68,7 +70,9 @@ def process_caption_files(
     elif output == "text":
         for file_idx in range(len(files)):
             caption_prefix: str = f"{prompt_prefix}, " if prompt_prefix else ""
-            caption = caption_prefix + image_caption_list[file_idx]["joycaption"]
+            caption_suffix: str = f", {prompt_suffix}" if prompt_suffix else ""
+            caption = caption_prefix + image_caption_list[file_idx]["joycaption"] + caption_suffix
+            caption = caption.replace(".", "") + "." if caption_suffix else caption
             filepath = Path(files[file_idx])
             filename = filepath.stem + ".txt"
             directory_path = filepath.parent
@@ -77,17 +81,17 @@ def process_caption_files(
 
 
 def process_captions(
-    images,
-    caption_type="",
-    caption_length="",
-    extra_options=None,
-    name="",
-    custom_prompt="",
-    batch_size: int = 1,
-    max_new_tokens: int = 256,
-    temperature: float = 0.6,
-    top_p: float = 0.9,
-    debug_prompt: bool = False,
+        images,
+        caption_type="",
+        caption_length="",
+        extra_options=None,
+        name="",
+        custom_prompt="",
+        batch_size: int = 1,
+        max_new_tokens: int = 256,
+        temperature: float = 0.6,
+        top_p: float = 0.9,
+        debug_prompt: bool = False,
 ):
     if extra_options is None:
         extra_options = {}

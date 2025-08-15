@@ -14,6 +14,7 @@ from model_facade.model_clip import inference
 from model_selection import load_model
 from state import APP_STATE
 
+
 # File: folder.py
 # Author: nflamously
 # Original License: Apache License 2.0
@@ -30,18 +31,19 @@ def folder():
 @click.option("--batch_size", default=1)
 @click.option("--custom_prompt", default="")
 @click.option("--prompt_prefix", default="")
+@click.option("--prompt_suffix", default="")
 def caption_folder(
-    path: str, output: str, batch_size: int, custom_prompt: str, prompt_prefix: str
+        path: str, output: str, batch_size: int, custom_prompt: str, prompt_prefix: str, prompt_suffix: str
 ):
     setup_config("clip")
     load_model()
     _caption_folder(
-        path, output, custom_prompt, batch_size, prompt_prefix=prompt_prefix
+        path, output, custom_prompt, batch_size, prompt_prefix, prompt_suffix
     )
 
 
 def _caption_folder(
-    path: str, output: str, custom_prompt: str, batch_size: int, prompt_prefix: str = ""
+        path: str, output: str, custom_prompt: str, batch_size: int, prompt_prefix: str = "", prompt_suffix: str = ""
 ):
     files = query_images(path)
     images = [
@@ -71,7 +73,9 @@ def _caption_folder(
     elif output == "text":
         for file_idx in range(len(files)):
             caption_prefix: str = f"{prompt_prefix}, " if prompt_prefix else ""
-            caption = caption_prefix + image_caption_list[file_idx]["caption"]
+            caption_suffix: str = f", {prompt_suffix}" if prompt_suffix else ""
+            caption = caption_prefix + image_caption_list[file_idx]["caption"] + caption_suffix
+            caption = caption.replace(".", "") + "." if caption_suffix else caption
             filepath = Path(files[file_idx])
             filename = filepath.stem + ".txt"
             directory_path = filepath.parent

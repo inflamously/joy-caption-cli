@@ -29,6 +29,7 @@ def folder():
 @click.option("--custom_prompt", default="")
 @click.option("--batch_size", default=1)
 @click.option("--prompt_prefix", default="")
+@click.option("--prompt_suffix", default="")
 def caption_folder(
         model_type: str,
         path: str,
@@ -40,6 +41,7 @@ def caption_folder(
         custom_prompt: str,
         batch_size: int,
         prompt_prefix: str,
+        prompt_suffix: str,
 ):
     setup_config(model_type)
     load_model()
@@ -53,6 +55,7 @@ def caption_folder(
         custom_prompt,
         batch_size,
         prompt_prefix,
+        prompt_suffix
     )
 
 
@@ -66,6 +69,7 @@ def process_caption_folder(
         custom_prompt: str,
         batch_size: int = 1,
         prompt_prefix: str = "",
+        prompt_suffix: str = "",
 ):
     if not os.path.exists(path):
         raise Exception("Path does not exist")
@@ -83,6 +87,7 @@ def process_caption_folder(
         custom_prompt,
         batch_size,
         prompt_prefix,
+        prompt_suffix,
     )
 
 
