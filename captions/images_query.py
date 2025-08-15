@@ -30,6 +30,14 @@ def query_images(path, walk_tree=True) -> list[str]:
         return query_root_files(path, extensions)
 
 
+def query_text(path, walk_tree=True) -> list[str]:
+    extensions = [".txt"]
+    if walk_tree:
+        return query_files(path, extensions)
+    else:
+        return query_root_files(path, extensions)
+
+
 def stream_image_files(paths: list[str], batch_size=128, stream_type: ImageStreamType = ImageStreamType.PIL) -> \
         Generator[
             tuple[list, list[str]], Any, None]:
@@ -46,5 +54,5 @@ def stream_image_files(paths: list[str], batch_size=128, stream_type: ImageStrea
                     pass
                 images_to_be_processed.append(img)
             except Exception as e:
-                print(f"Exception \"{e}\" occured while reading image:", batch_item)
+                print(f"Exception \"{e}\" occured while reading image at path: {batch_item}")
         yield images_to_be_processed, batch
