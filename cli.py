@@ -1,13 +1,14 @@
 import click
 from PIL import ImageFile
 
+from genai.commands import genai
+from quality.commands import quality_check
 from segmentation.segmentation import segmentation, has_gen2seg_installed
 from captions.clip.folder import folder as clip_caption_folder
 from captions.joy.file import file as joy_file_command
 from captions.joy.folder import folder as joy_folder_command
 from captions.joy.profiling import caption_profile_image as joy_caption_profile_image
 from initialization import setup_config
-from quality.quality_check import quality_check
 
 
 # File: cli.py
@@ -51,6 +52,7 @@ if __name__ == "__main__":
     cli.add_command(clip_caption)
     cli.add_command(version)
     cli.add_command(caption)
+    cli.add_command(genai)
 
     if has_gen2seg_installed():
         cli.add_command(segmentation)

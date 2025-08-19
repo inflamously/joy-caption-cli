@@ -4,7 +4,6 @@ import shutil
 import click
 import numpy as np
 import tqdm
-from PIL import ImageFile
 
 from captions.images_query import query_images, stream_image_files
 from quality.data_category_score import score_to_quality_label_pyiqa
@@ -62,7 +61,7 @@ def pyiqa_metrics(folder, output, stream_batch_size, walk_tree):
 
                     label, score = get_label_from_scores(scores[0], scores[1], scores[2])
 
-                    print(f"Rating image at [{batched_paths[idx]}] with a scores of [{score}]")
+                    #print(f"Rating image at [{batched_paths[idx]}] with a scores of [{score}]")
 
                     quality_path = os.path.join(target_path, label)
                     create_label_folder(quality_path)

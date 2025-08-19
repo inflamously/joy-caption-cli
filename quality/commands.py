@@ -2,6 +2,7 @@ import click
 
 from quality.aspect_ratio import aspectratio
 from quality.compare import compare
+from quality.image_check import image_check
 from quality.label_check import label_check
 from quality.brisque import brisque_check
 from quality.pyiqa_metrics import pyiqa_metrics
@@ -24,4 +25,5 @@ quality_check.add_command(label_check)
 quality_check.add_command(aspectratio)
 quality_check.add_command(compare)
 quality_check.add_command(resolution)
+quality_check.add_command(image_check)
 quality_check.add_command(wordcloud_builder)
