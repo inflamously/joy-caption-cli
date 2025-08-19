@@ -12,8 +12,8 @@ from genai.models.model_loader import load_model
 @click.argument("folder")
 @click.argument("model", type=click.Choice(["flux.dev", "flux.schnell"]))
 @click.option("--walk_tree", is_flag=True)
-@click.option("--root_folder_only", is_flag=True)
-def caption_check(folder: str, model: str, walk_tree, root_folder_only) -> None:
+@click.option("--interactive", is_flag=False)
+def caption_check(folder: str, model: str, walk_tree, interactive) -> None:
     try:
         print(f"Loading model {model} for caption checking.")
         wrapper = load_model(model)
