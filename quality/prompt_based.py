@@ -27,7 +27,11 @@ Focus solely on technical image quality defects. Output only one category name w
 @click.argument("model_type", type=click.Choice(supported_joycaption_models()))
 @click.option("--output")
 @click.option("--batch_size", default=1)
-def prompt_based_check(folder: str, model_type: str, batch_size: int, output: str = ""):
+def prompt_based_check(**kwargs):
+    model_type = kwargs.get("model_type")
+    output = kwargs.get("output")
+    folder = kwargs.get("folder")
+
     setup_config(model_type)
     load_model()
     image_paths = query_images(folder)
@@ -35,9 +39,9 @@ def prompt_based_check(folder: str, model_type: str, batch_size: int, output: st
 
     # Using the vision model to assess quality instead of categorizing content
     quality_assessments = process_captions(
-        images,
+        images=images,
         custom_prompt=custom_prompt(),
-        batch_size=batch_size,
+        batch_size=kwargs.get("batch_size") or 1,
         max_new_tokens=10,
         temperature=0,
         top_p=0.9,

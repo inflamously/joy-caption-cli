@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import List
 
 import PIL
+from pandas.core.window.doc import kwargs_scipy
 from tqdm import tqdm
 
 from model_facade import model_beta
@@ -29,32 +30,32 @@ def transform_images(files: List[str]):
     return images
 
 
-def process_caption_files(
-        files: List[str],
-        output: str,
-        caption_type: str = "Descriptive",
-        caption_length: str = "long",
-        name: str = "",
-        extra_options=None,
-        custom_prompt: str = "",
-        batch_size: int = 1,
-        prompt_prefix: str = "",
-        prompt_suffix: str = "",
-):
-    if extra_options is None:
-        extra_options = []
+def process_caption_files(**kwargs):
+    files = kwargs.get("images")
+    output = kwargs.get("output") or ""
+    prompt_prefix = kwargs.get("prompt_prefix") or ""
+    prompt_suffix = kwargs.get("prompt_suffix") or ""
+    confidence_score = kwargs.get("confidence_score") or 0.0
 
-    if any(map(lambda x: not os.path.exists(x), files)):
+    if any(map(lambda file: not os.path.exists(file), files)):
         raise FileNotFoundError
 
     if not APP_STATE["caption_map"]:
         raise Exception("config.json -> captions.map cannot be undefined!")
 
     images = transform_images(files)
-    options = extra_options if extra_options else []
 
     image_caption_list = process_captions(
-        images, caption_type, caption_length, options, name, custom_prompt, batch_size
+        images=images,
+        caption_type=kwargs.get("caption_type") or "Descriptive",
+        caption_length=kwargs.get("caption_length") or "long",
+        extra_options=kwargs.get("extra_options") or [],
+        name=kwargs.get("name") or "",
+        custom_prompt=kwargs.get("custom_prompt") or "",
+        batch_size=kwargs.get("batch_size") or 1,
+        temperature=kwargs.get("temperature") or 0.6,
+        confidence_threshold=confidence_score,
+        return_confidence_scores=confidence_score > 0.0
     )
 
     if not output or output == "json":
@@ -80,19 +81,23 @@ def process_caption_files(
                 f.write(caption)
 
 
-def process_captions(
-        images,
-        caption_type="",
-        caption_length="",
-        extra_options=None,
-        name="",
-        custom_prompt="",
-        batch_size: int = 1,
-        max_new_tokens: int = 256,
-        temperature: float = 0.6,
-        top_p: float = 0.9,
-        debug_prompt: bool = False,
-):
+def process_captions(**kwargs):
+    print(f"processing captions with arguments:\n({kwargs})")
+
+    images = kwargs.get("images")
+    caption_type = kwargs.get("caption_type") or "Descriptive"
+    caption_length = kwargs.get("caption_length") or "long"
+    extra_options = kwargs.get("extra_options") or []
+    name = kwargs.get("name") or ""
+    custom_prompt = kwargs.get("custom_prompt") or ""
+    batch_size = kwargs.get("batch_size") or 1
+    max_new_tokens = kwargs.get("max_new_tokens") or 256
+    temperature = kwargs.get("temperature") or 0.6
+    top_p = kwargs.get("top_p") or 0.9
+    debug_prompt = kwargs.get("debug_prompt") or False
+    confidence_threshold = kwargs.get("confidence_score") or 0.0
+    return_confidence_scores = confidence_threshold > 0.0
+
     if extra_options is None:
         extra_options = {}
     model_type = APP_STATE["model_type"]
@@ -129,6 +134,8 @@ def process_captions(
             max_new_tokens=max_new_tokens,
             show_prompt=debug_prompt,
             batch_size=batch_size,
+            confidence_threshold=confidence_threshold,
+            return_confidence_scores=return_confidence_scores
         )
     else:
         raise Exception(f"unknown model type {model_type}")

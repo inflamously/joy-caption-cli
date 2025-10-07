@@ -1,11 +1,8 @@
-from typing import List
-
 import click
 
 from captions.joy.files import process_caption_files
 from initialization import setup_config
 from model_selection import load_model, supported_joycaption_models
-from state import APP_STATE
 
 
 # File: file.py
@@ -26,52 +23,15 @@ def file():
 @click.option("--extra_options", "-ex", multiple=True)
 @click.option("--custom_prompt", default="")
 @click.option("--prompt_prefix", default="")
-def caption_file(
-    model_type: str,
-    file: str,
-    output: str,
-    caption_type: str,
-    caption_length: str,
-    name: str,
-    extra_options: List[str],
-    custom_prompt: str,
-    prompt_prefix: str,
-):
-    setup_config(model_type)
+@click.option("--temperature", default=0.6)
+def caption_file(**kwargs):
+    setup_config(kwargs["model_type"])
     load_model()
-    _process_caption_file(
-        file,
-        output,
-        caption_type,
-        caption_length,
-        name,
-        extra_options,
-        custom_prompt,
-        prompt_prefix,
-    )
+    process_caption_file(**kwargs)
 
 
-def _process_caption_file(
-    f: str,
-    output: str,
-    caption_type: str = "Descriptive",
-    caption_length: str = "long",
-    name: str = "",
-    extra_options=None,
-    custom_prompt: str = "",
-    prompt_prefix: str = "",
-):
-    process_caption_files(
-        [f],
-        output,
-        caption_type,
-        caption_length,
-        name,
-        extra_options,
-        custom_prompt,
-        1,
-        prompt_prefix,
-    )
+def process_caption_file(**kwargs):
+    process_caption_files(images=[kwargs["file"]], **kwargs)
 
 
 file.add_command(caption_file)

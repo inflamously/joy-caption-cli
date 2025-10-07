@@ -30,65 +30,19 @@ def folder():
 @click.option("--batch_size", default=1)
 @click.option("--prompt_prefix", default="")
 @click.option("--prompt_suffix", default="")
-def caption_folder(
-        model_type: str,
-        path: str,
-        output: str,
-        name: str,
-        caption_type: str,
-        caption_length: str,
-        extra_options: list[str],
-        custom_prompt: str,
-        batch_size: int,
-        prompt_prefix: str,
-        prompt_suffix: str,
-):
-    setup_config(model_type)
+@click.option("--temperature", default=0.6)
+@click.option("--confidence_score", default=0.0)
+def caption_folder(**kwargs):
+    setup_config(kwargs["model_type"])
     load_model()
-    process_caption_folder(
-        path,
-        output,
-        name,
-        caption_type,
-        caption_length,
-        extra_options,
-        custom_prompt,
-        batch_size,
-        prompt_prefix,
-        prompt_suffix
-    )
+    process_caption_folder(**kwargs)
 
 
-def process_caption_folder(
-        path: str,
-        output: str,
-        name: str,
-        caption_type: str,
-        caption_length: str,
-        extra_options: list[str],
-        custom_prompt: str,
-        batch_size: int = 1,
-        prompt_prefix: str = "",
-        prompt_suffix: str = "",
-):
-    if not os.path.exists(path):
+def process_caption_folder(**kwargs):
+    if not os.path.exists(kwargs["path"]):
         raise Exception("Path does not exist")
 
-    images = query_images(path)
-
-    # Process Images
-    process_caption_files(
-        images,
-        output,
-        caption_type,
-        caption_length,
-        name,
-        extra_options,
-        custom_prompt,
-        batch_size,
-        prompt_prefix,
-        prompt_suffix,
-    )
+    process_caption_files(images=query_images(kwargs["path"]), **kwargs)
 
 
 folder.add_command(caption_folder)
