@@ -1,10 +1,15 @@
 import click
+from PIL import ImageFile
 
+from genai.commands import genai
+from quality.commands import quality_check
+from segmentation.segmentation import segmentation, has_gen2seg_installed
 from captions.clip.folder import folder as clip_caption_folder
 from captions.joy.file import file as joy_file_command
 from captions.joy.folder import folder as joy_folder_command
 from captions.joy.profiling import caption_profile_image as joy_caption_profile_image
 from initialization import setup_config
+
 
 # File: cli.py
 # Author: nflamously
@@ -23,7 +28,7 @@ def version():
 
 @click.group("joycaption")
 def caption():
-    pass
+    setup_config()
 
 
 @click.group("clip")
@@ -32,7 +37,8 @@ def clip_caption():
 
 
 if __name__ == "__main__":
-    setup_config()
+    # Image edge case to handle
+    ImageFile.LOAD_TRUNCATED_IMAGES = True
 
     # Joy Caption
     caption.add_command(joy_file_command)
@@ -42,8 +48,13 @@ if __name__ == "__main__":
     # Stable Diffusion 1.5 -> CLIP
     clip_caption.add_command(clip_caption_folder)
 
+    cli.add_command(quality_check)
     cli.add_command(clip_caption)
     cli.add_command(version)
     cli.add_command(caption)
+    cli.add_command(genai)
+
+    if has_gen2seg_installed():
+        cli.add_command(segmentation)
 
     cli()
